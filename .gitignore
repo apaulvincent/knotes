@@ -32,3 +32,5 @@ firebase-debug.log*
 .yarn/
 thumbs.db
 desktop.ini
+firestore.rules
+storage.rules
