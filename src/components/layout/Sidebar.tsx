@@ -1,108 +1,290 @@
-import { Box, Typography, List, ListItem, ListItemButton, Divider, Avatar, IconButton, Tooltip } from '@mui/material';
-import { Note, Category } from '../../types/note';
+import { useState, useRef, useEffect } from 'react';
+import { Box, Typography, List, ListItem, ListItemButton, Divider, Avatar, TextField, InputAdornment, CircularProgress, IconButton, Tooltip } from '@mui/material';
+import ClassOutlinedIcon from '@mui/icons-material/ClassOutlined';
+import { Note } from '../../types/note';
 import { format } from 'date-fns';
 import { User } from 'firebase/auth';
-import { LogOut } from 'lucide-react';
+import { Search, PanelLeftClose } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 
 interface SidebarProps {
-    currentCategory: Category | null;
     notes: Note[];
     selectedNoteId: string | null;
     onNoteSelect: (id: string) => void;
     user: User | null;
-    onLogout: () => void;
+    onProfileClick: () => void;
+    hasMore: boolean;
+    onLoadMore: () => void;
+    loading: boolean;
+    error: string | null;
+    isSidebarOpen: boolean;
+    onToggleSidebar: () => void;
 }
 
-const Sidebar = ({ currentCategory, notes, selectedNoteId, onNoteSelect, user, onLogout }: SidebarProps) => {
+const Sidebar = ({
+    notes,
+    selectedNoteId,
+    onNoteSelect,
+    user,
+    onProfileClick,
+    hasMore,
+    onLoadMore,
+    loading,
+    error,
+    isSidebarOpen,
+    onToggleSidebar
+}: SidebarProps) => {
+    const navigate = useNavigate();
+    const [searchQuery, setSearchQuery] = useState('');
+    const observerRef = useRef<HTMLDivElement | null>(null);
+
+    useEffect(() => {
+        const observer = new IntersectionObserver(
+            (entries) => {
+                if (entries[0].isIntersecting && hasMore && !loading && searchQuery === '') {
+                    onLoadMore();
+                }
+            },
+            { threshold: 1.0 }
+        );
+
+        if (observerRef.current) {
+            observer.observe(observerRef.current);
+        }
+
+        return () => observer.disconnect();
+    }, [hasMore, loading, onLoadMore, searchQuery]);
+
+    const filteredNotes = notes.filter(note => {
+        const query = searchQuery.toLowerCase();
+        return (
+            note.title.toLowerCase().includes(query) ||
+            note.content.toLowerCase().includes(query)
+        );
+    });
+
     return (
         <Box
             sx={{
-                width: 300,
+                width: isSidebarOpen ? 300 : 0,
+                minWidth: isSidebarOpen ? 300 : 0,
                 height: '100vh',
-                borderRight: '1px solid #e2e8f0',
+                borderRight: isSidebarOpen ? '1px solid' : 'none',
+                borderColor: 'divider',
                 display: 'flex',
                 flexDirection: 'column',
-                backgroundColor: '#fff',
+                backgroundColor: 'background.paper',
+                overflow: 'hidden',
+                transition: 'all 0.3s ease',
+                position: 'relative'
             }}
         >
-            <Box sx={{ p: 3 }}>
-                <Typography variant="body2" color="text.secondary" gutterBottom>
-                    Tag: {currentCategory?.name || 'All Notes'}
+            {/* Header with Space Name */}
+            <Box sx={{ p: 2, pb: 1, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                <Typography
+                    variant="h6"
+                    onClick={() => navigate('/notes')}
+                    sx={{
+                        fontWeight: 800,
+                        color: 'primary.main',
+                        letterSpacing: '-0.02em',
+                        opacity: isSidebarOpen ? 1 : 0,
+                        cursor: 'pointer',
+                        '&:hover': { opacity: 0.8 }
+                    }}
+                >
+                    KNotes
                 </Typography>
-                <Typography variant="h6" sx={{ fontWeight: 700 }}>
-                    {notes.length} notes
-                </Typography>
+                <Box sx={{ display: 'flex', gap: 0.5, alignItems: 'center' }}>
+                    <Tooltip title="Categories">
+                        <IconButton
+                            size="small"
+                            onClick={() => navigate('/categories')}
+                            sx={{ color: 'text.secondary', opacity: isSidebarOpen ? 1 : 0 }}
+                        >
+                            <ClassOutlinedIcon sx={{ fontSize: 18 }} />
+                        </IconButton>
+                    </Tooltip>
+                    <Tooltip title="Close Sidebar">
+                        <IconButton size="small" onClick={onToggleSidebar} sx={{ color: 'text.secondary' }}>
+                            <PanelLeftClose size={18} />
+                        </IconButton>
+                    </Tooltip>
+                </Box>
+            </Box>
+
+            <Box sx={{ px: 1, mt: 1, mb: 2 }}>
+                <TextField
+                    fullWidth
+                    size="small"
+                    placeholder="Search notes..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    variant="outlined"
+                    InputProps={{
+                        startAdornment: (
+                            <InputAdornment position="start">
+                                <Search size={16} color="#94a3b8" />
+                            </InputAdornment>
+                        ),
+                        sx: {
+                            borderRadius: 1.5,
+                            fontSize: '0.875rem',
+                            color: 'text.primary',
+                            backgroundColor: 'background.default',
+                            '& .MuiOutlinedInput-notchedOutline': {
+                                borderColor: 'divider',
+                            },
+                            '&:hover .MuiOutlinedInput-notchedOutline': {
+                                borderColor: 'primary.main',
+                            },
+                            '& .MuiInputBase-input::placeholder': {
+                                color: 'text.disabled',
+                                opacity: 1,
+                            }
+                        }
+                    }}
+                />
+            </Box>
+
+            <Divider sx={{ opacity: 0.6 }} />
+
+            {/* Notes List Section */}
+            <Box sx={{ flexGrow: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column' }}>
+                <List sx={{ p: 1, pt: 0 }}>
+                    {filteredNotes.map((note) => (
+                        <ListItem key={note.id} disablePadding sx={{ mb: 0.5 }}>
+                            <ListItemButton
+                                selected={selectedNoteId === note.id}
+                                onClick={() => onNoteSelect(note.id)}
+                                sx={{
+                                    borderRadius: 2,
+                                    flexDirection: 'column',
+                                    alignItems: 'flex-start',
+                                    p: 2,
+                                    border: '1px solid',
+                                    borderColor: selectedNoteId === note.id ? 'primary.light' : 'transparent',
+                                    backgroundColor: selectedNoteId === note.id ? 'background.default' : 'transparent',
+                                    '&.Mui-selected': {
+                                        backgroundColor: 'background.default',
+                                        '&:hover': { backgroundColor: 'background.default' },
+                                    },
+                                    '&:hover': {
+                                        backgroundColor: 'action.hover',
+                                        borderColor: selectedNoteId === note.id ? 'primary.light' : 'divider',
+                                    },
+                                    transition: 'all 0.2s ease',
+                                }}
+                            >
+                                <Typography
+                                    variant="subtitle2"
+                                    noWrap
+                                    sx={{
+                                        fontWeight: 700,
+                                        mb: 0.5,
+                                        color: selectedNoteId === note.id ? 'primary.main' : 'text.primary',
+                                        width: '100%'
+                                    }}
+                                >
+                                    {note.title || 'Untitled'}
+                                </Typography>
+                                <Typography
+                                    variant="caption"
+                                    color="text.secondary"
+                                    sx={{
+                                        display: '-webkit-box',
+                                        WebkitLineClamp: 2,
+                                        WebkitBoxOrient: 'vertical',
+                                        overflow: 'hidden',
+                                        lineHeight: 1.5,
+                                        mb: 1,
+                                        opacity: 0.8,
+                                        wordBreak: 'break-all'
+                                    }}
+                                >
+                                    {note.content.replace(/<[^>]*>/g, '').substring(0, 100) || 'No additional content'}
+                                </Typography>
+                                <Box sx={{ display: 'flex', alignItems: 'center', width: '100%', justifyContent: 'space-between' }}>
+                                    <Typography variant="caption" sx={{ color: 'text.disabled', fontWeight: 600, fontSize: '10px' }}>
+                                        {note.updatedAt ? format(note.updatedAt.toDate(), 'MMM dd') : 'Just now'}
+                                    </Typography>
+                                </Box>
+                            </ListItemButton>
+                        </ListItem>
+                    ))}
+                    {error && (
+                        <Box sx={{ p: 4, textAlign: 'center' }}>
+                            <Typography variant="body2" color="error" sx={{ mb: 1, fontWeight: 700 }}>
+                                Error loading notes
+                            </Typography>
+                            <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>
+                                {error.includes('index') ? (
+                                    <>
+                                        This query requires a Firestore index. Check the browser console and click the link to create it.
+                                    </>
+                                ) : error}
+                            </Typography>
+                        </Box>
+                    )}
+
+                    {filteredNotes.length === 0 && !loading && !error && (
+                        <Box sx={{ p: 4, textAlign: 'center' }}>
+                            {/* Empty as requested */}
+                        </Box>
+                    )}
+
+                    {/* Lazy Load Sentinel */}
+                    {hasMore && searchQuery === '' && (
+                        <Box
+                            ref={observerRef}
+                            sx={{
+                                p: 2,
+                                display: 'flex',
+                                justifyContent: 'center',
+                                alignItems: 'center',
+                                minHeight: 60
+                            }}
+                        >
+                            {loading && <CircularProgress size={24} />}
+                        </Box>
+                    )}
+                </List>
             </Box>
 
             <Divider />
 
-            <List sx={{ flexGrow: 1, overflowY: 'auto', p: 1 }}>
-                {notes.map((note) => (
-                    <ListItem key={note.id} disablePadding sx={{ mb: 1 }}>
-                        <ListItemButton
-                            selected={selectedNoteId === note.id}
-                            onClick={() => onNoteSelect(note.id)}
-                            sx={{
-                                borderRadius: 2,
-                                flexDirection: 'column',
-                                alignItems: 'flex-start',
-                                '&.Mui-selected': {
-                                    backgroundColor: '#f1f5f9',
-                                    border: '1px solid #e2e8f0',
-                                    '&:hover': {
-                                        backgroundColor: '#f1f5f9',
-                                    },
-                                },
-                                border: '1px solid transparent',
-                            }}
-                        >
-                            <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 0.5 }}>
-                                {note.title || 'Untitled'}
-                            </Typography>
-                            <Typography
-                                variant="caption"
-                                color="text.secondary"
-                                sx={{
-                                    display: '-webkit-box',
-                                    WebkitLineClamp: 2,
-                                    WebkitBoxOrient: 'vertical',
-                                    overflow: 'hidden',
-                                    lineHeight: 1.4,
-                                    mb: 1
-                                }}
-                            >
-                                {note.content.replace(/<[^>]*>/g, '').substring(0, 100)}
-                            </Typography>
-                            <Typography variant="caption" color="text.disabled">
-                                {note.updatedAt ? format(note.updatedAt.toDate(), 'MMM dd, yyyy') : 'Just now'}
-                            </Typography>
-                        </ListItemButton>
-                    </ListItem>
-                ))}
-            </List>
-
-            <Divider />
-
-            <Box sx={{ p: 2, display: 'flex', alignItems: 'center', gap: 2 }}>
-                <Avatar
-                    src={user?.photoURL || ''}
-                    sx={{ width: 36, height: 36, bgcolor: '#6366f1' }}
+            {/* Profile Section */}
+            <Box sx={{ p: 2 }}>
+                <Box
+                    onClick={onProfileClick}
+                    sx={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 1.5,
+                        cursor: 'pointer',
+                        p: 1,
+                        borderRadius: 2,
+                        transition: 'background-color 0.2s',
+                        '&:hover': {
+                            backgroundColor: 'action.hover'
+                        }
+                    }}
                 >
-                    {user?.displayName?.[0] || 'U'}
-                </Avatar>
-                <Box sx={{ flexGrow: 1, minWidth: 0 }}>
-                    <Typography variant="body2" sx={{ fontWeight: 600, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                        {user?.displayName || 'User'}
-                    </Typography>
-                    <Typography variant="caption" color="text.secondary" sx={{ display: 'block', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                        {user?.email}
-                    </Typography>
+                    <Avatar
+                        src={user?.photoURL || ''}
+                        sx={{ width: 32, height: 32, bgcolor: 'primary.main', fontSize: '0.875rem' }}
+                    >
+                        {user?.displayName?.[0] || 'U'}
+                    </Avatar>
+                    <Box sx={{ flexGrow: 1, minWidth: 0 }}>
+                        <Typography variant="body2" sx={{ fontWeight: 700, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                            {user?.displayName || 'User'}
+                        </Typography>
+                        <Typography variant="caption" color="text.secondary" sx={{ display: 'block', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', fontSize: '11px' }}>
+                            {user?.email}
+                        </Typography>
+                    </Box>
                 </Box>
-                <Tooltip title="Sign Out">
-                    <IconButton size="small" onClick={onLogout} color="error">
-                        <LogOut size={18} />
-                    </IconButton>
-                </Tooltip>
             </Box>
         </Box>
     );

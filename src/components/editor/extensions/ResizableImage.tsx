@@ -54,7 +54,7 @@ const ResizableImageNode = (props: NodeViewProps) => {
                     display: 'inline-block',
                     lineHeight: 0,
                     outline: selected ? '2px solid #6366f1' : 'none',
-                    borderRadius: '8px',
+                    borderRadius: '4px',
                     transition: 'outline 0.1s',
                     '&:hover .image-controls': {
                         opacity: 1
@@ -68,7 +68,7 @@ const ResizableImageNode = (props: NodeViewProps) => {
                         width: resizing ? width : node.attrs.width || 'auto',
                         height: 'auto',
                         display: 'block',
-                        borderRadius: '8px',
+                        borderRadius: '4px',
                         maxWidth: '100%'
                     }}
                 />

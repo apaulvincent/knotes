@@ -25,7 +25,7 @@ const Login = ({ onLogin }: LoginProps) => {
                     flexDirection: 'column',
                     alignItems: 'center',
                     gap: 4,
-                    borderRadius: 8,
+                    borderRadius: 1,
                     boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)',
                     maxWidth: 400,
                     width: '90%',
@@ -63,7 +63,7 @@ const Login = ({ onLogin }: LoginProps) => {
                     sx={{
                         py: 1.5,
                         px: 4,
-                        borderRadius: 3,
+                        borderRadius: 1,
                         textTransform: 'none',
                         fontSize: '1rem',
                         fontWeight: 600,

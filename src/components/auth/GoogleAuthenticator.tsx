@@ -72,7 +72,7 @@ const GoogleAuthenticator = ({ user, onVerified }: GoogleAuthenticatorProps) => 
 
     if (loading) {
         return (
-            <Box sx={{ height: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', bgcolor: '#0f172a' }}>
+            <Box sx={{ height: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', bgcolor: '#f8fafc' }}>
                 <CircularProgress color="primary" />
             </Box>
         );
@@ -86,26 +86,25 @@ const GoogleAuthenticator = ({ user, onVerified }: GoogleAuthenticatorProps) => 
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                background: 'linear-gradient(135deg, #0f172a 0%, #1e293b 100%)',
-                color: 'white'
+                background: 'linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%)',
+                color: '#1e293b'
             }}
         >
             <Paper
-                elevation={24}
+                elevation={0}
                 sx={{
                     p: 6,
                     display: 'flex',
                     flexDirection: 'column',
                     alignItems: 'center',
                     gap: 3,
-                    borderRadius: 8,
-                    bgcolor: 'rgba(30, 41, 59, 0.8)',
-                    backdropFilter: 'blur(10px)',
-                    border: '1px solid rgba(255, 255, 255, 0.1)',
+                    borderRadius: 1,
+                    bgcolor: '#ffffff',
+                    border: '1px solid #e2e8f0',
                     maxWidth: 450,
                     width: '95%',
                     textAlign: 'center',
-                    boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.5)'
+                    boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)'
                 }}
             >
                 <Box sx={{ position: 'relative' }}>
@@ -125,10 +124,10 @@ const GoogleAuthenticator = ({ user, onVerified }: GoogleAuthenticatorProps) => 
                 </Box>
 
                 <Box>
-                    <Typography variant="h5" sx={{ fontWeight: 800, mb: 1 }}>
+                    <Typography variant="h5" sx={{ fontWeight: 800, mb: 1, color: '#1e293b' }}>
                         {isSetup ? 'Setup Two-Factor Auth' : 'Security Verification'}
                     </Typography>
-                    <Typography variant="body2" sx={{ color: 'rgba(255,255,255,0.6)', mb: 2 }}>
+                    <Typography variant="body2" sx={{ color: 'text.secondary', mb: 2 }}>
                         {isSetup
                             ? 'Scan this QR code with Google Authenticator to secure your vault.'
                             : 'Enter the 6-digit code from your Google Authenticator app.'}
@@ -136,7 +135,7 @@ const GoogleAuthenticator = ({ user, onVerified }: GoogleAuthenticatorProps) => 
                 </Box>
 
                 {isSetup && (
-                    <Box sx={{ bgcolor: 'white', p: 2, borderRadius: 4, mb: 2 }}>
+                    <Box sx={{ bgcolor: 'white', p: 2, borderRadius: 1, mb: 2, border: '1px solid #e2e8f0' }}>
                         <QRCodeSVG value={otpauth} size={180} />
                     </Box>
                 )}
@@ -156,7 +155,7 @@ const GoogleAuthenticator = ({ user, onVerified }: GoogleAuthenticatorProps) => 
                                 textAlign: 'center',
                                 fontSize: '2rem',
                                 letterSpacing: '0.5rem',
-                                color: 'white',
+                                color: '#1e293b',
                                 fontWeight: 700
                             }
                         }}
@@ -165,8 +164,8 @@ const GoogleAuthenticator = ({ user, onVerified }: GoogleAuthenticatorProps) => 
                         FormHelperTextProps={{ sx: { textAlign: 'center', color: '#f87171' } }}
                         sx={{
                             mb: 4,
-                            '& .MuiInput-underline:before': { borderBottomColor: 'rgba(255,255,255,0.3)' },
-                            '& .MuiInput-underline:hover:before': { borderBottomColor: 'rgba(255,255,255,0.5) !important' }
+                            '& .MuiInput-underline:before': { borderBottomColor: 'rgba(0,0,0,0.1)' },
+                            '& .MuiInput-underline:hover:before': { borderBottomColor: 'rgba(0,0,0,0.2) !important' }
                         }}
                     />
                     <Button
@@ -178,16 +177,17 @@ const GoogleAuthenticator = ({ user, onVerified }: GoogleAuthenticatorProps) => 
                         startIcon={<Lock size={20} />}
                         sx={{
                             py: 1.5,
-                            borderRadius: 3,
+                            borderRadius: 1,
                             bgcolor: '#6366f1',
                             transition: 'all 0.3s',
+                            boxShadow: '0 4px 6px -1px rgba(99, 102, 241, 0.4)',
                             '&:hover': { bgcolor: '#4f46e5', transform: 'translateY(-2px)' }
                         }}
                     >
                         {isSetup ? 'Verify & Setup' : 'Unlock Vault'}
                     </Button>
 
-                    <Box sx={{ mt: 4, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 1, opacity: 0.5 }}>
+                    <Box sx={{ mt: 4, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 1, color: 'text.secondary' }}>
                         <Smartphone size={16} />
                         <Typography variant="caption">
                             Secure Auth for {user.email}

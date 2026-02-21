@@ -1,17 +1,16 @@
-import { Box, Tabs, Tab, Button } from '@mui/material';
+import { Box, Tabs, Tab, IconButton, Tooltip } from '@mui/material';
 import { Plus } from 'lucide-react';
 
 interface CategoryTabsProps {
     categories: { id: string; name: string }[];
     selectedCategoryId: string;
     onSelect: (id: string) => void;
-    onAdd: () => void;
-    onAddNote: () => void;
+    onAddCategory: () => void;
 }
 
-const CategoryTabs = ({ categories, selectedCategoryId, onSelect, onAdd, onAddNote }: CategoryTabsProps) => {
+const CategoryTabs = ({ categories, selectedCategoryId, onSelect, onAddCategory }: CategoryTabsProps) => {
     return (
-        <Box sx={{ borderBottom: 1, borderColor: 'divider', display: 'flex', alignItems: 'center', mb: 3 }}>
+        <Box sx={{ borderBottom: 1, borderColor: 'divider', mb: 3, display: 'flex', alignItems: 'center' }}>
             <Tabs
                 value={selectedCategoryId}
                 onChange={(_, value) => onSelect(value)}
@@ -19,7 +18,7 @@ const CategoryTabs = ({ categories, selectedCategoryId, onSelect, onAdd, onAddNo
                 scrollButtons="auto"
                 sx={{
                     '& .MuiTabs-indicator': {
-                        backgroundColor: '#6366f1',
+                        backgroundColor: 'primary.main',
                         height: 3,
                         borderRadius: '3px 3px 0 0',
                     },
@@ -29,9 +28,9 @@ const CategoryTabs = ({ categories, selectedCategoryId, onSelect, onAdd, onAddNo
                         fontWeight: 500,
                         minWidth: 'auto',
                         px: 3,
-                        color: '#64748b',
+                        color: 'text.secondary',
                         '&.Mui-selected': {
-                            color: '#1e293b',
+                            color: 'text.primary',
                             fontWeight: 600,
                         },
                     },
@@ -42,25 +41,11 @@ const CategoryTabs = ({ categories, selectedCategoryId, onSelect, onAdd, onAddNo
                     <Tab key={cat.id} label={cat.name} value={cat.id} />
                 ))}
             </Tabs>
-            <Box sx={{ ml: 'auto', pl: 2, display: 'flex', gap: 1 }}>
-                <Button
-                    startIcon={<Plus size={18} />}
-                    variant="contained"
-                    size="small"
-                    onClick={onAddNote}
-                    sx={{ boxShadow: 'none' }}
-                >
-                    New Note
-                </Button>
-                <Button
-                    startIcon={<Plus size={18} />}
-                    size="small"
-                    onClick={onAdd}
-                    sx={{ color: '#64748b' }}
-                >
-                    New Category
-                </Button>
-            </Box>
+            <Tooltip title="New Category">
+                <IconButton size="small" onClick={onAddCategory} sx={{ ml: 1, mb: 0.5 }}>
+                    <Plus size={20} />
+                </IconButton>
+            </Tooltip>
         </Box>
     );
 };

@@ -98,16 +98,19 @@ const NoteEditor = ({ content, onChange, editable = true }: NoteEditorProps) => 
                     elevation={0}
                     sx={{
                         p: 1,
-                        mb: 2,
                         display: 'flex',
                         flexWrap: 'wrap',
                         gap: 0.5,
-                        backgroundColor: '#f1f5f9',
-                        borderRadius: '8px',
-                        border: 'none',
+                        backgroundColor: 'background.paper',
+                        borderRadius: 0,
+                        borderBottom: '1px solid',
+                        borderColor: 'divider',
                         position: 'sticky',
                         top: 0,
-                        zIndex: 10
+                        left: 0,
+                        right: 0,
+                        zIndex: 100,
+                        mb: 0,
                     }}
                 >
                     <ButtonGroup variant="text" size="small">
@@ -213,23 +216,29 @@ const NoteEditor = ({ content, onChange, editable = true }: NoteEditorProps) => 
             <Box
                 sx={{
                     flexGrow: 1,
+                    px: 3,
+                    pb: 4,
+                    pt: 2,
                     '& .tiptap': {
                         outline: 'none',
                         minHeight: '200px',
                         fontSize: '1rem',
                         lineHeight: 1.6,
-                        color: '#334155',
+                        color: 'text.primary',
                         '& p': { margin: '0.5rem 0' },
                         '& pre': {
-                            backgroundColor: '#1e293b',
-                            color: '#f8fafc',
+                            backgroundColor: 'background.default',
+                            color: 'text.primary',
                             padding: '1rem',
-                            borderRadius: '8px',
+                            borderRadius: '4px',
                             fontFamily: 'monospace',
                             overflowX: 'auto',
+                            border: '1px solid',
+                            borderColor: 'divider',
                         },
                         '& code': {
-                            backgroundColor: '#f1f5f9',
+                            backgroundColor: 'action.hover',
+                            color: 'text.primary',
                             padding: '0.2rem 0.4rem',
                             borderRadius: '4px',
                             fontSize: '0.9em',
@@ -247,19 +256,21 @@ const NoteEditor = ({ content, onChange, editable = true }: NoteEditorProps) => 
                         '& img': {
                             maxWidth: '100%',
                             height: 'auto',
-                            borderRadius: '8px',
+                            borderRadius: '4px',
                             display: 'block'
                         },
                         '& a': {
-                            color: '#6366f1',
+                            color: 'primary.main',
                             textDecoration: 'underline',
                             cursor: 'pointer',
                         },
                         '& blockquote': {
-                            borderLeft: '4px solid #e2e8f0',
+                            borderLeft: '4px solid',
+                            borderColor: 'divider',
                             paddingLeft: '1rem',
                             fontStyle: 'italic',
                             margin: '1rem 0',
+                            color: 'text.secondary',
                         }
                     }
                 }}
@@ -305,7 +316,7 @@ const NoteEditor = ({ content, onChange, editable = true }: NoteEditorProps) => 
                                 maxHeight: '90vh',
                                 display: 'block',
                                 margin: 'auto',
-                                borderRadius: '8px'
+                                borderRadius: '4px'
                             }}
                         />
                     )}

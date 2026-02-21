@@ -1,62 +1,72 @@
-import { Box } from '@mui/material';
+import { Box, IconButton, Tooltip } from '@mui/material';
 import Sidebar from './Sidebar';
-import CategoryTabs from '../notes/CategoryTabs';
-import { Category, Note } from '../../types/note';
-import { ReactNode } from 'react';
+import { Note } from '../../types/note';
+import { ReactNode, useState } from 'react';
 import { User } from 'firebase/auth';
+import { PanelLeftOpen } from 'lucide-react';
 
 interface LayoutProps {
-    categories: Category[];
-    selectedCategoryId: string;
-    onCategorySelect: (id: string) => void;
-    onAddCategory: () => void;
-    onAddNote: () => void;
-    currentCategory: Category | null;
     notes: Note[];
     selectedNoteId: string | null;
     onNoteSelect: (id: string) => void;
     user: User | null;
-    onLogout: () => void;
+    onProfileClick: () => void;
+    hasMore: boolean;
+    onLoadMore: () => void;
+    loading: boolean;
+    error: string | null;
     children: ReactNode;
 }
 
 const Layout = ({
-    categories,
-    selectedCategoryId,
-    onCategorySelect,
-    onAddCategory,
-    onAddNote,
-    currentCategory,
     notes,
     selectedNoteId,
     onNoteSelect,
     user,
-    onLogout,
+    onProfileClick,
+    hasMore,
+    onLoadMore,
+    loading,
+    error,
     children
 }: LayoutProps) => {
+    const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+
+    const toggleSidebar = () => setIsSidebarOpen(!isSidebarOpen);
     return (
         <Box sx={{ display: 'flex', height: '100vh', width: '100vw', overflow: 'hidden' }}>
             <Sidebar
-                currentCategory={currentCategory}
                 notes={notes}
                 selectedNoteId={selectedNoteId}
                 onNoteSelect={onNoteSelect}
                 user={user}
-                onLogout={onLogout}
+                onProfileClick={onProfileClick}
+                hasMore={hasMore}
+                onLoadMore={onLoadMore}
+                loading={loading}
+                error={error}
+                isSidebarOpen={isSidebarOpen}
+                onToggleSidebar={toggleSidebar}
             />
 
-            <Box sx={{ flexGrow: 1, display: 'flex', flexDirection: 'column', height: '100vh', backgroundColor: '#f8fafc' }}>
-                <Box sx={{ px: 4, pt: 2 }}>
-                    <CategoryTabs
-                        categories={categories}
-                        selectedCategoryId={selectedCategoryId}
-                        onSelect={onCategorySelect}
-                        onAdd={onAddCategory}
-                        onAddNote={onAddNote}
-                    />
-                </Box>
-
-                <Box sx={{ flexGrow: 1, px: 4, pb: 4, overflow: 'hidden' }}>
+            <Box sx={{ flexGrow: 1, display: 'flex', flexDirection: 'column', height: '100vh', backgroundColor: 'background.default', position: 'relative' }}>
+                {!isSidebarOpen && (
+                    <Box sx={{ position: 'absolute', top: 20, left: 20, zIndex: 1201 }}>
+                        <Tooltip title="Open Sidebar">
+                            <IconButton
+                                onClick={toggleSidebar}
+                                sx={{
+                                    backgroundColor: 'background.paper',
+                                    boxShadow: 2,
+                                    '&:hover': { backgroundColor: 'action.hover' }
+                                }}
+                            >
+                                <PanelLeftOpen size={20} />
+                            </IconButton>
+                        </Tooltip>
+                    </Box>
+                )}
+                <Box sx={{ flexGrow: 1, p: 4, overflow: 'hidden' }}>
                     {children}
                 </Box>
             </Box>

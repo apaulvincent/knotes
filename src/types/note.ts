@@ -1,10 +1,3 @@
-export interface Attachment {
-    name: string;
-    url: string;
-    type: string;
-    size: number;
-}
-
 export interface Category {
     id: string;
     name: string;
@@ -17,11 +10,10 @@ export interface Note {
     id: string;
     title: string;
     content: string;
-    categoryId: string;
+    categoryIds: string[];
     tags: string[];
     isPinned: boolean;
     userId: string; // New: Link to user
-    attachments?: Attachment[];
     createdAt: any;
     updatedAt: any;
 }

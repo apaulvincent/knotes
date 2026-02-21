@@ -1,17 +1,21 @@
 import { useState, useEffect, useCallback } from 'react';
 import {
-    collection, query, where, onSnapshot,
+    collection, query, where, onSnapshot, orderBy,
     addDoc, updateDoc, deleteDoc, doc,
-    serverTimestamp, getDoc
+    serverTimestamp, getDoc, limit
 } from 'firebase/firestore';
-import { db, storage } from '../services/firebase';
-import { Note, Category, Attachment } from '../types/note';
-import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
+import { db } from '../services/firebase';
+import { Note, Category } from '../types/note';
 
 export const useNotes = (userId: string | undefined) => {
     const [notes, setNotes] = useState<Note[]>([]);
     const [categories, setCategories] = useState<Category[]>([]);
     const [loading, setLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
+    const [noteLimit, setNoteLimit] = useState(15);
+    const [hasMore, setHasMore] = useState(true);
+
+    const PAGE_SIZE = 15;
 
     // Fetch Categories for current user
     useEffect(() => {
@@ -19,7 +23,8 @@ export const useNotes = (userId: string | undefined) => {
 
         const q = query(
             collection(db, 'categories'),
-            where('userId', '==', userId)
+            where('userId', '==', userId),
+            orderBy('name', 'asc')
         );
 
         const unsubscribe = onSnapshot(q, (snapshot) => {
@@ -42,13 +47,17 @@ export const useNotes = (userId: string | undefined) => {
         if (categoryId === 'all') {
             q = query(
                 collection(db, 'notes'),
-                where('userId', '==', userId)
+                where('userId', '==', userId),
+                orderBy('updatedAt', 'desc'),
+                limit(noteLimit)
             );
         } else {
             q = query(
                 collection(db, 'notes'),
                 where('userId', '==', userId),
-                where('categoryId', '==', categoryId)
+                where('categoryIds', 'array-contains', categoryId),
+                orderBy('updatedAt', 'desc'),
+                limit(noteLimit)
             );
         }
 
@@ -58,26 +67,48 @@ export const useNotes = (userId: string | undefined) => {
                 ...doc.data({ serverTimestamps: 'estimate' }),
             })) as Note[];
             setNotes(fetchedNotes);
+            // If the number of documents returned is less than the limit we requested,
+            // we know there are no more documents to load.
+            setHasMore(snapshot.docs.length === noteLimit);
             setLoading(false);
-        }, (error) => {
-            console.error("Error fetching notes:", error);
+            setError(null);
+        }, (err) => {
+            console.error("Error fetching notes:", err);
+            setError(err.message);
             setLoading(false);
+            setHasMore(false); // Stop trying to load more if there's an error
         });
 
         return unsubscribe;
-    }, [userId]);
+    }, [userId, noteLimit]);
+
+    const loadMoreNotes = useCallback(() => {
+        if (hasMore && !loading) {
+            setLoading(true);
+            setNoteLimit(prev => prev + PAGE_SIZE);
+        }
+    }, [hasMore, loading]);
+
+    const resetNoteLimit = useCallback(() => {
+        setNoteLimit(PAGE_SIZE);
+        setHasMore(true);
+        setError(null);
+    }, []);
 
     const getNote = async (id: string): Promise<Note | null> => {
         if (!userId) return null;
         const docRef = doc(db, 'notes', id);
-        const docSnap = await getDoc(docRef);
-
-        if (docSnap.exists()) {
-            const data = docSnap.data() as Note;
-            // Security check: ensure user owns the note
-            if (data.userId === userId) {
-                return { ...data, id: docSnap.id } as Note;
+        try {
+            const docSnap = await getDoc(docRef);
+            if (docSnap.exists()) {
+                const data = docSnap.data() as Note;
+                // Security check: ensure user owns the note
+                if (data.userId === userId) {
+                    return { ...data, id: docSnap.id } as Note;
+                }
             }
+        } catch (err: any) {
+            console.error("Error getting note:", err);
         }
         return null;
     };
@@ -88,7 +119,7 @@ export const useNotes = (userId: string | undefined) => {
         const newNote = {
             title: 'New Note',
             content: '<p></p>',
-            categoryId: categoryId === 'all' ? '' : categoryId,
+            categoryIds: categoryId === 'all' ? [] : [categoryId],
             tags: [],
             isPinned: false,
             userId, // Anchor to user
@@ -115,42 +146,28 @@ export const useNotes = (userId: string | undefined) => {
 
     const addCategory = async (name: string) => {
         if (!userId) return;
-        await addDoc(collection(db, 'categories'), {
+        const docRef = await addDoc(collection(db, 'categories'), {
             name,
             count: 0,
             userId, // Anchor to user
             createdAt: serverTimestamp(),
         });
-    };
-
-    const uploadFile = async (noteId: string, file: File): Promise<Attachment> => {
-        if (!userId) throw new Error("User must be logged in");
-
-        // Store in user-specific folder for security
-        const storageRef = ref(storage, `users/${userId}/notes/${noteId}/${file.name}`);
-        await uploadBytes(storageRef, file);
-        const url = await getDownloadURL(storageRef);
-
-        const attachment: Attachment = {
-            name: file.name,
-            url,
-            type: file.type,
-            size: file.size,
-        };
-
-        return attachment;
+        return docRef.id;
     };
 
     return {
         notes,
         categories,
         loading,
+        error,
+        hasMore,
         fetchNotes,
+        loadMoreNotes,
+        resetNoteLimit,
         getNote,
         addNote,
         updateNote,
         deleteNote,
         addCategory,
-        uploadFile,
     };
 };
