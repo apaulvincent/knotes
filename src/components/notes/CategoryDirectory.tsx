@@ -41,7 +41,7 @@ const CategoryDirectory = ({ categories, onCategorySelect }: CategoryDirectoryPr
 
             <Grid container spacing={4}>
                 {letters.map((letter) => (
-                    <Grid size={{ xs: 12, sm: 6, md: 4, lg: 3 }} key={letter}>
+                    <Grid size={{ xs: 6, sm: 4, md: 3, lg: 2 }} key={letter}>
                         <Paper
                             elevation={0}
                             sx={{
