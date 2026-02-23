@@ -6,7 +6,8 @@ import {
     User,
     createUserWithEmailAndPassword,
     signInWithEmailAndPassword,
-    sendEmailVerification
+    sendEmailVerification,
+    updateProfile
 } from 'firebase/auth';
 import { auth, googleProvider } from '../services/firebase';
 
@@ -86,6 +87,22 @@ export const useAuth = () => {
         }
     };
 
+    const handleUpdateProfile = async (displayName: string, photoURL?: string) => {
+        if (auth.currentUser) {
+            try {
+                await updateProfile(auth.currentUser, {
+                    displayName,
+                    photoURL: photoURL || auth.currentUser.photoURL
+                });
+                // Force a re-render by creating a new user object reference
+                setUser({ ...auth.currentUser });
+            } catch (error) {
+                console.error("Profile update failed:", error);
+                throw error;
+            }
+        }
+    };
+
     const handleLogout = async () => {
         try {
             await signOut(auth);
@@ -102,6 +119,7 @@ export const useAuth = () => {
         handleEmailSignUp,
         handleEmailSignIn,
         handleSendVerificationEmail,
+        handleUpdateProfile,
         handleLogout
     };
 };

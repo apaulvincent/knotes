@@ -1,16 +1,33 @@
-import { Box, Typography, Paper, Avatar, Button, ToggleButtonGroup, ToggleButton, Divider, Stack } from '@mui/material';
+import { Box, Typography, Paper, Avatar, Button, ToggleButtonGroup, ToggleButton, Divider, Stack, TextField } from '@mui/material';
 import { User } from 'firebase/auth';
-import { Sun, Moon, Monitor, Shield, Mail, Calendar, LogOut } from 'lucide-react';
+import { Sun, Moon, Monitor, Shield, Mail, Calendar, LogOut, Edit2, Check, X } from 'lucide-react';
 import { useThemeContext } from '../../contexts/ThemeContext';
 import { format } from 'date-fns';
+import { useState } from 'react';
 
 interface AccountPageProps {
     user: User;
     onLogout: () => void;
+    onUpdateProfile: (displayName: string) => Promise<void>;
 }
 
-const AccountPage = ({ user, onLogout }: AccountPageProps) => {
+const AccountPage = ({ user, onLogout, onUpdateProfile }: AccountPageProps) => {
     const { mode, setMode } = useThemeContext();
+    const [isEditing, setIsEditing] = useState(false);
+    const [name, setName] = useState(user.displayName || '');
+    const [loading, setLoading] = useState(false);
+
+    const handleUpdate = async () => {
+        setLoading(true);
+        try {
+            await onUpdateProfile(name);
+            setIsEditing(false);
+        } catch (error) {
+            console.error(error);
+        } finally {
+            setLoading(false);
+        }
+    };
 
     const handleThemeChange = (
         _event: React.MouseEvent<HTMLElement>,
@@ -30,21 +47,81 @@ const AccountPage = ({ user, onLogout }: AccountPageProps) => {
             <Stack spacing={4}>
                 {/* Profile Section */}
                 <Paper elevation={0} sx={{ p: 4, borderRadius: 1 }}>
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 3, mb: 4 }}>
-                        <Avatar
-                            src={user.photoURL || ''}
-                            sx={{ width: 100, height: 100, border: '4px solid #6366f1' }}
-                        >
-                            {user.displayName?.[0]}
-                        </Avatar>
-                        <Box>
-                            <Typography variant="h5" sx={{ fontWeight: 700 }}>
-                                {user.displayName}
-                            </Typography>
-                            <Typography variant="body1" color="text.secondary">
-                                {user.email}
-                            </Typography>
+                    <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 4 }}>
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 3 }}>
+                            <Avatar
+                                sx={{
+                                    width: 100,
+                                    height: 100,
+                                    border: '4px solid #6366f1',
+                                    fontSize: '2rem',
+                                    fontWeight: 700,
+                                    bgcolor: 'primary.main',
+                                    color: 'white'
+                                }}
+                            >
+                                {name?.[0] || user.email?.[0]?.toUpperCase()}
+                            </Avatar>
+                            {!isEditing ? (
+                                <Box>
+                                    <Typography variant="h5" sx={{ fontWeight: 700 }}>
+                                        {user.displayName || 'KNotes User'}
+                                    </Typography>
+                                    <Typography variant="body1" color="text.secondary">
+                                        {user.email}
+                                    </Typography>
+                                </Box>
+                            ) : (
+                                <Box sx={{ minWidth: 250 }}>
+                                    <TextField
+                                        label="Display Name"
+                                        size="small"
+                                        fullWidth
+                                        value={name}
+                                        onChange={(e) => setName(e.target.value)}
+                                        disabled={loading}
+                                        autoFocus
+                                    />
+                                </Box>
+                            )}
                         </Box>
+                        {!isEditing ? (
+                            <Button
+                                variant="text"
+                                startIcon={<Edit2 size={18} />}
+                                onClick={() => setIsEditing(true)}
+                                sx={{ textTransform: 'none' }}
+                            >
+                                Edit Name
+                            </Button>
+                        ) : (
+                            <Box sx={{ display: 'flex', gap: 1 }}>
+                                <Button
+                                    variant="contained"
+                                    size="small"
+                                    startIcon={<Check size={18} />}
+                                    onClick={handleUpdate}
+                                    disabled={loading}
+                                    sx={{ textTransform: 'none' }}
+                                >
+                                    Save
+                                </Button>
+                                <Button
+                                    variant="text"
+                                    size="small"
+                                    color="inherit"
+                                    startIcon={<X size={18} />}
+                                    onClick={() => {
+                                        setIsEditing(false);
+                                        setName(user.displayName || '');
+                                    }}
+                                    disabled={loading}
+                                    sx={{ textTransform: 'none' }}
+                                >
+                                    Cancel
+                                </Button>
+                            </Box>
+                        )}
                     </Box>
 
                     <Divider sx={{ my: 3 }} />

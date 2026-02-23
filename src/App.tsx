@@ -25,6 +25,7 @@ function App() {
     handleEmailSignUp,
     handleEmailSignIn,
     handleSendVerificationEmail,
+    handleUpdateProfile,
     handleLogout
   } = useAuth();
   const {
@@ -231,7 +232,7 @@ function App() {
       >
         <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
           {isAccountPage ? (
-            <AccountPage user={user} onLogout={handleLogout} />
+            <AccountPage user={user} onLogout={handleLogout} onUpdateProfile={handleUpdateProfile} />
           ) : activeNote ? (
             <Paper
               elevation={0}
