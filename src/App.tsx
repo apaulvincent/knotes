@@ -11,13 +11,22 @@ import { Note } from './types/note';
 import { Trash2, Plus, Save, Loader2 } from 'lucide-react';
 import Login from './components/auth/Login';
 import GoogleAuthenticator from './components/auth/GoogleAuthenticator';
+import EmailVerification from './components/auth/EmailVerification';
 import { useAuth } from './hooks/useAuth';
 import AccountPage from './components/account/AccountPage';
 import NoteCategoryChips from './components/notes/NoteCategoryChips';
 import CategoryDirectory from './components/notes/CategoryDirectory';
 
 function App() {
-  const { user, loading: authLoading, handleLogin, handleLogout } = useAuth();
+  const {
+    user,
+    loading: authLoading,
+    handleLogin: handleGoogleLogin,
+    handleEmailSignUp,
+    handleEmailSignIn,
+    handleSendVerificationEmail,
+    handleLogout
+  } = useAuth();
   const {
     notes, categories, loading: notesLoading, error: notesError, hasMore, fetchNotes,
     loadMoreNotes, resetNoteLimit, getNote, addNote, updateNote,
@@ -175,7 +184,23 @@ function App() {
   }
 
   if (!user) {
-    return <Login onLogin={handleLogin} />;
+    return (
+      <Login
+        onGoogleLogin={handleGoogleLogin}
+        onEmailSignIn={handleEmailSignIn}
+        onEmailSignUp={handleEmailSignUp}
+      />
+    );
+  }
+
+  if (!user.emailVerified) {
+    return (
+      <EmailVerification
+        email={user.email}
+        onResend={handleSendVerificationEmail}
+        onLogout={handleLogout}
+      />
+    );
   }
 
   if (!isVerified) {

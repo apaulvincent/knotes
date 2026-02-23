@@ -3,7 +3,10 @@ import {
     onAuthStateChanged,
     signInWithPopup,
     signOut,
-    User
+    User,
+    createUserWithEmailAndPassword,
+    signInWithEmailAndPassword,
+    sendEmailVerification
 } from 'firebase/auth';
 import { auth, googleProvider } from '../services/firebase';
 
@@ -45,6 +48,41 @@ export const useAuth = () => {
             localStorage.setItem('loginTime', Date.now().toString());
         } catch (error) {
             console.error("Login failed:", error);
+            throw error;
+        }
+    };
+
+    const handleEmailSignUp = async (email: string, password: string) => {
+        try {
+            const credential = await createUserWithEmailAndPassword(auth, email, password);
+            await sendEmailVerification(credential.user);
+            localStorage.setItem('loginTime', Date.now().toString());
+            return credential.user;
+        } catch (error) {
+            console.error("Sign up failed:", error);
+            throw error;
+        }
+    };
+
+    const handleEmailSignIn = async (email: string, password: string) => {
+        try {
+            const credential = await signInWithEmailAndPassword(auth, email, password);
+            localStorage.setItem('loginTime', Date.now().toString());
+            return credential.user;
+        } catch (error) {
+            console.error("Sign in failed:", error);
+            throw error;
+        }
+    };
+
+    const handleSendVerificationEmail = async () => {
+        if (auth.currentUser) {
+            try {
+                await sendEmailVerification(auth.currentUser);
+            } catch (error) {
+                console.error("Verification email failed:", error);
+                throw error;
+            }
         }
     };
 
@@ -61,6 +99,9 @@ export const useAuth = () => {
         user,
         loading,
         handleLogin,
+        handleEmailSignUp,
+        handleEmailSignIn,
+        handleSendVerificationEmail,
         handleLogout
     };
 };
