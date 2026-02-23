@@ -1,6 +1,6 @@
-import { Box, Typography, Paper, Avatar, Button, ToggleButtonGroup, ToggleButton, Divider, Stack, TextField } from '@mui/material';
+import { Box, Typography, Paper, Avatar, Button, ToggleButtonGroup, ToggleButton, Divider, Stack, TextField, InputAdornment, IconButton } from '@mui/material';
 import { User } from 'firebase/auth';
-import { Sun, Moon, Monitor, Shield, Mail, Calendar, LogOut, Edit2, Check, X } from 'lucide-react';
+import { Sun, Moon, Monitor, Shield, Mail, Calendar, LogOut, Edit2, Check, Trash2 } from 'lucide-react';
 import { useThemeContext } from '../../contexts/ThemeContext';
 import { format } from 'date-fns';
 import { useState } from 'react';
@@ -64,15 +64,24 @@ const AccountPage = ({ user, onLogout, onUpdateProfile }: AccountPageProps) => {
                             </Avatar>
                             {!isEditing ? (
                                 <Box>
-                                    <Typography variant="h5" sx={{ fontWeight: 700 }}>
-                                        {user.displayName || 'KNotes User'}
-                                    </Typography>
+                                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                        <Typography variant="h5" sx={{ fontWeight: 700 }}>
+                                            {user.displayName || 'KNotes User'}
+                                        </Typography>
+                                        <IconButton
+                                            size="small"
+                                            onClick={() => setIsEditing(true)}
+                                            sx={{ color: 'text.secondary' }}
+                                        >
+                                            <Edit2 size={18} />
+                                        </IconButton>
+                                    </Box>
                                     <Typography variant="body1" color="text.secondary">
                                         {user.email}
                                     </Typography>
                                 </Box>
                             ) : (
-                                <Box sx={{ minWidth: 250 }}>
+                                <Box sx={{ minWidth: 300, display: 'flex', alignItems: 'center', gap: 1 }}>
                                     <TextField
                                         label="Display Name"
                                         size="small"
@@ -81,47 +90,41 @@ const AccountPage = ({ user, onLogout, onUpdateProfile }: AccountPageProps) => {
                                         onChange={(e) => setName(e.target.value)}
                                         disabled={loading}
                                         autoFocus
+                                        InputProps={{
+                                            endAdornment: (
+                                                <InputAdornment position="end">
+                                                    <IconButton
+                                                        edge="end"
+                                                        onClick={handleUpdate}
+                                                        disabled={loading || !name.trim()}
+                                                        color="primary"
+                                                        size="small"
+                                                    >
+                                                        <Check size={20} />
+                                                    </IconButton>
+                                                </InputAdornment>
+                                            ),
+                                        }}
+                                        onKeyPress={(e) => {
+                                            if (e.key === 'Enter') {
+                                                handleUpdate();
+                                            }
+                                        }}
                                     />
+                                    <IconButton
+                                        onClick={() => {
+                                            setIsEditing(false);
+                                            setName(user.displayName || '');
+                                        }}
+                                        disabled={loading}
+                                        color="error"
+                                        size="small"
+                                    >
+                                        <Trash2 size={18} />
+                                    </IconButton>
                                 </Box>
                             )}
                         </Box>
-                        {!isEditing ? (
-                            <Button
-                                variant="text"
-                                startIcon={<Edit2 size={18} />}
-                                onClick={() => setIsEditing(true)}
-                                sx={{ textTransform: 'none' }}
-                            >
-                                Edit Name
-                            </Button>
-                        ) : (
-                            <Box sx={{ display: 'flex', gap: 1 }}>
-                                <Button
-                                    variant="contained"
-                                    size="small"
-                                    startIcon={<Check size={18} />}
-                                    onClick={handleUpdate}
-                                    disabled={loading}
-                                    sx={{ textTransform: 'none' }}
-                                >
-                                    Save
-                                </Button>
-                                <Button
-                                    variant="text"
-                                    size="small"
-                                    color="inherit"
-                                    startIcon={<X size={18} />}
-                                    onClick={() => {
-                                        setIsEditing(false);
-                                        setName(user.displayName || '');
-                                    }}
-                                    disabled={loading}
-                                    sx={{ textTransform: 'none' }}
-                                >
-                                    Cancel
-                                </Button>
-                            </Box>
-                        )}
                     </Box>
 
                     <Divider sx={{ my: 3 }} />
