@@ -227,21 +227,24 @@ const NoteEditor = ({ content, onChange, editable = true }: NoteEditorProps) => 
                         color: 'text.primary',
                         '& p': { margin: '0.5rem 0' },
                         '& pre': {
-                            backgroundColor: 'background.default',
-                            color: 'text.primary',
-                            padding: '1rem',
-                            borderRadius: '4px',
-                            fontFamily: 'monospace',
+                            backgroundColor: '#1e293b', // Deep navy/slate
+                            color: '#f8fafc', // Off-white
+                            padding: '1.25rem',
+                            borderRadius: '8px',
+                            fontFamily: '"JetBrains Mono", "Fira Code", monospace',
                             overflowX: 'auto',
                             border: '1px solid',
-                            borderColor: 'divider',
+                            borderColor: 'transparent',
+                            boxShadow: 'inset 0 2px 4px 0 rgba(0, 0, 0, 0.06)',
+                            margin: '1.5rem 0',
                         },
                         '& code': {
-                            backgroundColor: 'action.hover',
-                            color: 'text.primary',
+                            backgroundColor: 'action.selected',
+                            color: 'primary.main',
                             padding: '0.2rem 0.4rem',
                             borderRadius: '4px',
                             fontSize: '0.9em',
+                            fontWeight: 500,
                         },
                         '& pre code': {
                             backgroundColor: 'transparent',

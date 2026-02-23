@@ -34,7 +34,7 @@ const CategoryDirectory = ({ categories, onCategorySelect }: CategoryDirectoryPr
     };
 
     return (
-        <Box sx={{ p: 4, maxWidth: 1200, mx: 'auto' }}>
+        <Box sx={{ p: 4, width: '100%', mx: 'auto' }}>
             <Typography variant="h4" sx={{ fontWeight: 800, mb: 4, color: 'text.primary' }}>
                 Categories
             </Typography>
@@ -47,7 +47,8 @@ const CategoryDirectory = ({ categories, onCategorySelect }: CategoryDirectoryPr
                             sx={{
                                 p: 2,
                                 backgroundColor: 'transparent',
-                                border: 'none'
+                                border: 'none',
+                                boxShadow: 'none'
                             }}
                         >
                             <Typography
@@ -56,7 +57,6 @@ const CategoryDirectory = ({ categories, onCategorySelect }: CategoryDirectoryPr
                                     fontWeight: 900,
                                     color: 'primary.main',
                                     mb: 1,
-                                    borderBottom: '2px solid',
                                     borderColor: 'primary.light',
                                     display: 'inline-block',
                                     minWidth: '40px'
@@ -80,7 +80,8 @@ const CategoryDirectory = ({ categories, onCategorySelect }: CategoryDirectoryPr
                                                 primaryTypographyProps={{
                                                     variant: 'body1',
                                                     fontWeight: 500,
-                                                    color: 'text.secondary'
+                                                    color: 'text.secondary',
+                                                    whiteSpace: 'nowrap'
                                                 }}
                                                 sx={{
                                                     '& .MuiListItemText-primary': {
