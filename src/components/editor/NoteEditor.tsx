@@ -227,15 +227,15 @@ const NoteEditor = ({ content, onChange, editable = true }: NoteEditorProps) => 
                         color: 'text.primary',
                         '& p': { margin: '0.5rem 0' },
                         '& pre': {
-                            backgroundColor: '#1e293b', // Deep navy/slate
+                            backgroundColor: '#050a14', // Ultra dark navy
                             color: '#f8fafc', // Off-white
                             padding: '1.25rem',
                             borderRadius: '8px',
                             fontFamily: '"JetBrains Mono", "Fira Code", monospace',
                             overflowX: 'auto',
                             border: '1px solid',
-                            borderColor: 'transparent',
-                            boxShadow: 'inset 0 2px 4px 0 rgba(0, 0, 0, 0.06)',
+                            borderColor: 'rgba(255, 255, 255, 0.05)',
+                            boxShadow: 'inset 0 2px 4px 0 rgba(0, 0, 0, 0.2)',
                             margin: '1.5rem 0',
                         },
                         '& code': {
