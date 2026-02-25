@@ -234,6 +234,7 @@ function App() {
       <CssBaseline />
       <Layout
         notes={notes}
+        categories={categories}
         selectedNoteId={noteId || null}
         onNoteSelect={handleNoteSelect}
         onTogglePin={handleTogglePin}

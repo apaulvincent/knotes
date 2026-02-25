@@ -1,14 +1,15 @@
 import ClassOutlinedIcon from '@mui/icons-material/ClassOutlined';
-import { Avatar, Box, CircularProgress, Divider, IconButton, InputAdornment, List, ListItem, ListItemButton, TextField, Tooltip, Typography } from '@mui/material';
+import { Avatar, Box, Chip, CircularProgress, Divider, IconButton, InputAdornment, List, ListItem, ListItemButton, TextField, Tooltip, Typography } from '@mui/material';
 import { format } from 'date-fns';
 import { User } from 'firebase/auth';
 import { PanelLeftClose, Pin, Search } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Note } from '../../types/note';
+import { Category, Note } from '../../types/note';
 
 interface SidebarProps {
     notes: Note[];
+    categories: Category[];
     selectedNoteId: string | null;
     onNoteSelect: (id: string) => void;
     onTogglePin: (id: string, currentStatus: boolean) => void;
@@ -24,6 +25,7 @@ interface SidebarProps {
 
 const Sidebar = ({
     notes,
+    categories,
     selectedNoteId,
     onNoteSelect,
     onTogglePin,
@@ -229,10 +231,31 @@ const Sidebar = ({
                                 >
                                     {note.content.replace(/<[^>]*>/g, '').substring(0, 100) || 'No additional content'}
                                 </Typography>
-                                <Box sx={{ display: 'flex', alignItems: 'center', width: '100%', justifyContent: 'space-between' }}>
+                                <Box sx={{ display: 'flex', alignItems: 'center', width: '100%', justifyContent: 'space-between', flexWrap: 'wrap', gap: 1 }}>
                                     <Typography variant="caption" sx={{ color: 'text.disabled', fontWeight: 600, fontSize: '10px' }}>
                                         {note.updatedAt ? format(note.updatedAt.toDate(), 'MMM dd') : 'Just now'}
                                     </Typography>
+                                    <Box sx={{ display: 'flex', gap: 0.5, flexWrap: 'wrap' }}>
+                                        {note.categoryIds?.map(catId => {
+                                            const category = categories.find(c => c.id === catId);
+                                            if (!category) return null;
+                                            return (
+                                                <Chip
+                                                    key={catId}
+                                                    label={category.name}
+                                                    size="small"
+                                                    sx={{
+                                                        height: 16,
+                                                        fontSize: '9px',
+                                                        fontWeight: 700,
+                                                        backgroundColor: 'action.selected',
+                                                        color: 'text.secondary',
+                                                        '& .MuiChip-label': { px: 1 }
+                                                    }}
+                                                />
+                                            );
+                                        })}
+                                    </Box>
                                 </Box>
                             </ListItemButton>
                         </ListItem>

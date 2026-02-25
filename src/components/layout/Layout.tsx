@@ -2,11 +2,12 @@ import { Box, IconButton, Tooltip } from '@mui/material';
 import { User } from 'firebase/auth';
 import { PanelLeftOpen } from 'lucide-react';
 import { ReactNode, useState } from 'react';
-import { Note } from '../../types/note';
+import { Category, Note } from '../../types/note';
 import Sidebar from './Sidebar';
 
 interface LayoutProps {
     notes: Note[];
+    categories: Category[];
     selectedNoteId: string | null;
     onNoteSelect: (id: string) => void;
     onTogglePin: (id: string, currentStatus: boolean) => void;
@@ -21,6 +22,7 @@ interface LayoutProps {
 
 const Layout = ({
     notes,
+    categories,
     selectedNoteId,
     onNoteSelect,
     onTogglePin,
@@ -39,6 +41,7 @@ const Layout = ({
         <Box sx={{ display: 'flex', height: '100vh', width: '100vw', overflow: 'hidden' }}>
             <Sidebar
                 notes={notes}
+                categories={categories}
                 selectedNoteId={selectedNoteId}
                 onNoteSelect={onNoteSelect}
                 onTogglePin={onTogglePin}
