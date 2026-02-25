@@ -8,7 +8,7 @@ import {
   Tooltip
 } from '@mui/material';
 import { Loader2, Plus, Save, Trash2 } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import AccountPage from './components/account/AccountPage';
 import EmailVerification from './components/auth/EmailVerification';
@@ -132,22 +132,27 @@ function App() {
     navigate(`/notes/${id}?category=${categoryTab}`);
   };
 
-  const handleAddNote = async () => {
+  const handleAddNote = useCallback(async () => {
     const id = await addNote(categoryTab);
     navigate(`/notes/${id}?category=${categoryTab}`);
-  };
+  }, [addNote, categoryTab, navigate]);
 
   // Keyboard shortcuts
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if ((e.ctrlKey || e.metaKey) && e.key === 'n') {
+      // Ctrl+N, Cmd+N (Mac), or Alt+N (more reliable in browsers)
+      const isNewNoteKey = e.key.toLowerCase() === 'n' && (e.ctrlKey || e.metaKey || e.altKey);
+      
+      if (isNewNoteKey) {
         e.preventDefault();
+        e.stopPropagation();
         handleAddNote();
       }
     };
 
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
+    // Use capture mode (true) to intercept the event before the browser handles it
+    window.addEventListener('keydown', handleKeyDown, true);
+    return () => window.removeEventListener('keydown', handleKeyDown, true);
   }, [handleAddNote]);
 
   // Auto-save logic
