@@ -346,14 +346,16 @@ const NoteEditor = ({ content, onChange, editable = true }: NoteEditorProps) => 
                         },
                         '& .resizable-image-wrapper': {
                             display: 'inline-block',
-                            margin: '1rem 0',
+                            margin: '0.25rem',
                             maxWidth: '100%',
+                            verticalAlign: 'top',
                         },
                         '& img': {
                             maxWidth: '100%',
                             height: 'auto',
                             borderRadius: '4px',
-                            display: 'block'
+                            display: 'inline-block',
+                            verticalAlign: 'bottom'
                         },
                         '& a': {
                             color: 'primary.main',

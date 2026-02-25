@@ -1,6 +1,6 @@
-import { NodeViewWrapper, NodeViewProps, ReactNodeViewRenderer } from '@tiptap/react';
-import Image from '@tiptap/extension-image';
 import { Box, IconButton } from '@mui/material';
+import Image from '@tiptap/extension-image';
+import { NodeViewProps, NodeViewWrapper, ReactNodeViewRenderer } from '@tiptap/react';
 import { Maximize2 } from 'lucide-react';
 import React, { useState } from 'react';
 
@@ -47,7 +47,7 @@ const ResizableImageNode = (props: NodeViewProps) => {
     };
 
     return (
-        <NodeViewWrapper className="resizable-image-wrapper">
+        <NodeViewWrapper as="span" className="resizable-image-wrapper">
             <Box
                 sx={{
                     position: 'relative',
@@ -67,9 +67,10 @@ const ResizableImageNode = (props: NodeViewProps) => {
                     style={{
                         width: resizing ? width : node.attrs.width || 'auto',
                         height: 'auto',
-                        display: 'block',
+                        display: 'inline-block',
                         borderRadius: '4px',
-                        maxWidth: '100%'
+                        maxWidth: '100%',
+                        verticalAlign: 'bottom'
                     }}
                 />
 
@@ -140,6 +141,9 @@ export const ResizableImage = Image.extend({
             },
         };
     },
+
+    inline: true,
+    group: 'inline',
 
     addNodeView() {
         return ReactNodeViewRenderer(ResizableImageNode);
