@@ -1,21 +1,26 @@
-import { useState, useEffect } from 'react';
 import {
-  CssBaseline, Box, Paper, TextField,
-  IconButton, Button, Fab, Tooltip
+    Box,
+    Button,
+    CssBaseline,
+    Fab,
+    IconButton,
+    Paper, TextField,
+    Tooltip
 } from '@mui/material';
-import { useParams, useNavigate, useLocation } from 'react-router-dom';
-import Layout from './components/layout/Layout';
+import { Loader2, Plus, Save, Trash2 } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { useLocation, useNavigate, useParams } from 'react-router-dom';
+import AccountPage from './components/account/AccountPage';
+import EmailVerification from './components/auth/EmailVerification';
+import GoogleAuthenticator from './components/auth/GoogleAuthenticator';
+import Login from './components/auth/Login';
 import NoteEditor from './components/editor/NoteEditor';
+import Layout from './components/layout/Layout';
+import CategoryDirectory from './components/notes/CategoryDirectory';
+import NoteCategoryChips from './components/notes/NoteCategoryChips';
+import { useAuth } from './hooks/useAuth';
 import { useNotes } from './hooks/useNotes';
 import { Note } from './types/note';
-import { Trash2, Plus, Save, Loader2 } from 'lucide-react';
-import Login from './components/auth/Login';
-import GoogleAuthenticator from './components/auth/GoogleAuthenticator';
-import EmailVerification from './components/auth/EmailVerification';
-import { useAuth } from './hooks/useAuth';
-import AccountPage from './components/account/AccountPage';
-import NoteCategoryChips from './components/notes/NoteCategoryChips';
-import CategoryDirectory from './components/notes/CategoryDirectory';
 
 function App() {
   const {
@@ -115,8 +120,16 @@ function App() {
     navigate(id === 'all' ? '/' : `/categories/${id}`);
   };
 
+  const handleTogglePin = async (id: string, currentStatus: boolean) => {
+    try {
+      await updateNote(id, { isPinned: !currentStatus });
+    } catch (err) {
+      console.error("Failed to toggle pin:", err);
+    }
+  };
+
   const handleNoteSelect = (id: string) => {
-    navigate(`/notes/${id}`);
+    navigate(`/notes/${id}?category=${categoryTab}`);
   };
 
   const handleAddNote = async () => {
@@ -223,6 +236,7 @@ function App() {
         notes={notes}
         selectedNoteId={noteId || null}
         onNoteSelect={handleNoteSelect}
+        onTogglePin={handleTogglePin}
         user={user}
         onProfileClick={() => navigate('/account')}
         hasMore={hasMore}

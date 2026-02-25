@@ -1,16 +1,17 @@
-import { useState, useRef, useEffect } from 'react';
-import { Box, Typography, List, ListItem, ListItemButton, Divider, Avatar, TextField, InputAdornment, CircularProgress, IconButton, Tooltip } from '@mui/material';
 import ClassOutlinedIcon from '@mui/icons-material/ClassOutlined';
-import { Note } from '../../types/note';
+import { Avatar, Box, CircularProgress, Divider, IconButton, InputAdornment, List, ListItem, ListItemButton, TextField, Tooltip, Typography } from '@mui/material';
 import { format } from 'date-fns';
 import { User } from 'firebase/auth';
-import { Search, PanelLeftClose } from 'lucide-react';
+import { PanelLeftClose, Pin, Search } from 'lucide-react';
+import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { Note } from '../../types/note';
 
 interface SidebarProps {
     notes: Note[];
     selectedNoteId: string | null;
     onNoteSelect: (id: string) => void;
+    onTogglePin: (id: string, currentStatus: boolean) => void;
     user: User | null;
     onProfileClick: () => void;
     hasMore: boolean;
@@ -25,6 +26,7 @@ const Sidebar = ({
     notes,
     selectedNoteId,
     onNoteSelect,
+    onTogglePin,
     user,
     onProfileClick,
     hasMore,
@@ -176,18 +178,41 @@ const Sidebar = ({
                                     transition: 'all 0.2s ease',
                                 }}
                             >
-                                <Typography
-                                    variant="subtitle2"
-                                    noWrap
-                                    sx={{
-                                        fontWeight: 700,
-                                        mb: 0.5,
-                                        color: selectedNoteId === note.id ? 'primary.main' : 'text.primary',
-                                        width: '100%'
-                                    }}
-                                >
-                                    {note.title || 'Untitled'}
-                                </Typography>
+                                <Box sx={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', width: '100%', mb: 0.5 }}>
+                                    <Typography
+                                        variant="subtitle2"
+                                        noWrap
+                                        sx={{
+                                            fontWeight: 700,
+                                            color: selectedNoteId === note.id ? 'primary.main' : 'text.primary',
+                                        }}
+                                    >
+                                        {note.title || 'Untitled'}
+                                    </Typography>
+                                    <Tooltip title={note.isPinned ? "Unpin" : "Pin"}>
+                                        <IconButton
+                                            size="small"
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                onTogglePin(note.id, note.isPinned);
+                                            }}
+                                            sx={{
+                                                ml: 1,
+                                                mt: -0.5,
+                                                mr: -1,
+                                                color: note.isPinned ? 'primary.main' : 'text.disabled',
+                                                transform: note.isPinned ? 'none' : 'rotate(-45deg)',
+                                                '&:hover': { 
+                                                    color: 'primary.main',
+                                                    transform: 'none'
+                                                },
+                                                transition: 'all 0.2s ease'
+                                            }}
+                                        >
+                                            <Pin size={14} fill={note.isPinned ? 'currentColor' : 'none'} />
+                                        </IconButton>
+                                    </Tooltip>
+                                </Box>
                                 <Typography
                                     variant="caption"
                                     color="text.secondary"

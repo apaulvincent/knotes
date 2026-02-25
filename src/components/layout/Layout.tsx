@@ -1,14 +1,15 @@
 import { Box, IconButton, Tooltip } from '@mui/material';
-import Sidebar from './Sidebar';
-import { Note } from '../../types/note';
-import { ReactNode, useState } from 'react';
 import { User } from 'firebase/auth';
 import { PanelLeftOpen } from 'lucide-react';
+import { ReactNode, useState } from 'react';
+import { Note } from '../../types/note';
+import Sidebar from './Sidebar';
 
 interface LayoutProps {
     notes: Note[];
     selectedNoteId: string | null;
     onNoteSelect: (id: string) => void;
+    onTogglePin: (id: string, currentStatus: boolean) => void;
     user: User | null;
     onProfileClick: () => void;
     hasMore: boolean;
@@ -22,6 +23,7 @@ const Layout = ({
     notes,
     selectedNoteId,
     onNoteSelect,
+    onTogglePin,
     user,
     onProfileClick,
     hasMore,
@@ -39,6 +41,7 @@ const Layout = ({
                 notes={notes}
                 selectedNoteId={selectedNoteId}
                 onNoteSelect={onNoteSelect}
+                onTogglePin={onTogglePin}
                 user={user}
                 onProfileClick={onProfileClick}
                 hasMore={hasMore}
