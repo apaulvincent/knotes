@@ -137,6 +137,26 @@ function App() {
     navigate(`/notes/${id}?category=${categoryTab}`);
   };
 
+  // Auto-save logic
+  useEffect(() => {
+    if (!activeNote || isSaving) return;
+
+    const originalNote = notes.find(n => n.id === activeNote.id);
+    if (!originalNote) return;
+
+    const hasChanges = 
+      activeNote.title !== originalNote.title || 
+      activeNote.content !== originalNote.content ||
+      JSON.stringify(activeNote.categoryIds) !== JSON.stringify(originalNote.categoryIds);
+
+    if (hasChanges) {
+      const timer = setTimeout(() => {
+        handleSave();
+      }, 1500); // 1.5 seconds delay before auto-save
+      return () => clearTimeout(timer);
+    }
+  }, [activeNote, notes, isSaving]);
+
   const handleSave = async () => {
     if (activeNote) {
       setIsSaving(true);
