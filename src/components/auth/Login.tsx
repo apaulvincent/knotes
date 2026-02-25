@@ -1,6 +1,7 @@
-import { Box, Button, Typography, Paper, TextField, Divider, Alert, CircularProgress, IconButton } from '@mui/material';
-import { Mail, ArrowLeft, ArrowRight } from 'lucide-react';
+import { Alert, Box, Button, CircularProgress, Divider, IconButton, Paper, TextField, Typography } from '@mui/material';
+import { ArrowLeft, ArrowRight } from 'lucide-react';
 import { useState } from 'react';
+import Logo from '../common/Logo';
 
 interface LoginProps {
     onGoogleLogin: () => Promise<any>;
@@ -68,21 +69,7 @@ const Login = ({ onGoogleLogin, onEmailSignIn, onEmailSignUp }: LoginProps) => {
                         width: '90%',
                     }}
                 >
-                    <Box
-                        sx={{
-                            width: 64,
-                            height: 64,
-                            borderRadius: '50%',
-                            backgroundColor: '#6366f1',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            color: 'white',
-                            mb: 1,
-                        }}
-                    >
-                        <Mail size={32} />
-                    </Box>
+                    <Logo size={72} />
                     <Box sx={{ textAlign: 'center' }}>
                         <Typography variant="h4" sx={{ fontWeight: 800, mb: 1, color: '#1e293b' }}>
                             KNotes
@@ -99,7 +86,7 @@ const Login = ({ onGoogleLogin, onEmailSignIn, onEmailSignUp }: LoginProps) => {
                             variant="contained"
                             fullWidth
                             size="large"
-                            startIcon={loading ? <CircularProgress size={20} color="inherit" /> : <Mail size={20} />}
+                            startIcon={loading ? <CircularProgress size={20} color="inherit" /> : <Logo size={20} />}
                             onClick={handleGoogleLogin}
                             disabled={loading}
                             sx={{

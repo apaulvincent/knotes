@@ -1,9 +1,9 @@
-import { Box, Typography, Paper, Avatar, Button, ToggleButtonGroup, ToggleButton, Divider, Stack, TextField, InputAdornment, IconButton } from '@mui/material';
-import { User } from 'firebase/auth';
-import { Sun, Moon, Monitor, Shield, Mail, Calendar, LogOut, Edit2, Check, Trash2 } from 'lucide-react';
-import { useThemeContext } from '../../contexts/ThemeContext';
+import { Avatar, Box, Button, Divider, IconButton, InputAdornment, Paper, Stack, TextField, ToggleButton, ToggleButtonGroup, Typography } from '@mui/material';
 import { format } from 'date-fns';
+import { User } from 'firebase/auth';
+import { Calendar, Check, Edit2, LogOut, Mail, Monitor, Moon, Shield, Sun, Trash2 } from 'lucide-react';
 import { useState } from 'react';
+import { useThemeContext } from '../../contexts/ThemeContext';
 
 interface AccountPageProps {
     user: User;
@@ -53,7 +53,8 @@ const AccountPage = ({ user, onLogout, onUpdateProfile }: AccountPageProps) => {
                                 sx={{
                                     width: 100,
                                     height: 100,
-                                    border: '4px solid #6366f1',
+                                    border: '4px solid',
+                                    borderColor: 'primary.main',
                                     fontSize: '2rem',
                                     fontWeight: 700,
                                     bgcolor: 'primary.main',
@@ -155,7 +156,7 @@ const AccountPage = ({ user, onLogout, onUpdateProfile }: AccountPageProps) => {
                         </Box>
 
                         <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                            <Shield size={20} color="#6366f1" />
+                            <Shield size={20} color="#0ea5e9" />
                             <Box>
                                 <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>
                                     Security Status

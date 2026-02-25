@@ -1,11 +1,11 @@
 import {
-    Box,
-    Button,
-    CssBaseline,
-    Fab,
-    IconButton,
-    Paper, TextField,
-    Tooltip
+  Box,
+  Button,
+  CssBaseline,
+  Fab,
+  IconButton,
+  Paper, TextField,
+  Tooltip
 } from '@mui/material';
 import { Loader2, Plus, Save, Trash2 } from 'lucide-react';
 import { useEffect, useState } from 'react';
@@ -258,6 +258,17 @@ function App() {
         selectedNoteId={noteId || null}
         onNoteSelect={handleNoteSelect}
         onTogglePin={handleTogglePin}
+        onDeleteNote={(id: string) => {
+          if (noteId === id) {
+            const otherNotes = notes.filter(n => n.id !== id);
+            if (otherNotes.length > 0) {
+              navigate(`/notes/${otherNotes[0].id}`);
+            } else {
+              navigate(categoryTab === 'all' ? '/' : `/categories/${categoryTab}`);
+            }
+          }
+          deleteNote(id);
+        }}
         user={user}
         onProfileClick={() => navigate('/account')}
         hasMore={hasMore}
@@ -308,10 +319,10 @@ function App() {
                     </IconButton>
                     <Button
                       variant="contained"
-                      startIcon={<Save size={18} />}
+                      startIcon={<Save size={18} color="white" />}
                       onClick={handleSave}
                       disabled={isSaving}
-                      sx={{ whiteSpace: 'nowrap', minWidth: '90px' }}
+                      sx={{ whiteSpace: 'nowrap', minWidth: '90px', color: 'white' }}
                     >
                       {isSaving ? 'Saving...' : 'Save'}
                     </Button>
@@ -375,7 +386,7 @@ function App() {
                 }
               }}
             >
-              <Plus size={28} />
+              <Plus size={28} color="white" />
             </Fab>
           </Tooltip>
         )}

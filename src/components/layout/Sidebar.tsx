@@ -2,10 +2,11 @@ import ClassOutlinedIcon from '@mui/icons-material/ClassOutlined';
 import { Avatar, Box, Chip, CircularProgress, Divider, IconButton, InputAdornment, List, ListItem, ListItemButton, TextField, Tooltip, Typography } from '@mui/material';
 import { format } from 'date-fns';
 import { User } from 'firebase/auth';
-import { PanelLeftClose, Pin, Search } from 'lucide-react';
+import { PanelLeftClose, Pin, Search, Trash2 } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Category, Note } from '../../types/note';
+import Logo from '../common/Logo';
 
 interface SidebarProps {
     notes: Note[];
@@ -13,6 +14,7 @@ interface SidebarProps {
     selectedNoteId: string | null;
     onNoteSelect: (id: string) => void;
     onTogglePin: (id: string, currentStatus: boolean) => void;
+    onDeleteNote: (id: string) => void;
     user: User | null;
     onProfileClick: () => void;
     hasMore: boolean;
@@ -29,6 +31,7 @@ const Sidebar = ({
     selectedNoteId,
     onNoteSelect,
     onTogglePin,
+    onDeleteNote,
     user,
     onProfileClick,
     hasMore,
@@ -85,20 +88,29 @@ const Sidebar = ({
         >
             {/* Header with Space Name */}
             <Box sx={{ p: 2, pb: 1, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                <Typography
-                    variant="h6"
+                <Box
                     onClick={() => navigate('/notes')}
                     sx={{
-                        fontWeight: 800,
-                        color: 'primary.main',
-                        letterSpacing: '-0.02em',
-                        opacity: isSidebarOpen ? 1 : 0,
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 1.5,
                         cursor: 'pointer',
+                        opacity: isSidebarOpen ? 1 : 0,
                         '&:hover': { opacity: 0.8 }
                     }}
                 >
-                    KNotes
-                </Typography>
+                    <Logo size={24} />
+                    <Typography
+                        variant="h6"
+                        sx={{
+                            fontWeight: 800,
+                            color: 'primary.main',
+                            letterSpacing: '-0.02em',
+                        }}
+                    >
+                        KNotes
+                    </Typography>
+                </Box>
                 <Box sx={{ display: 'flex', gap: 0.5, alignItems: 'center' }}>
                     <Tooltip title="Categories">
                         <IconButton
@@ -178,6 +190,17 @@ const Sidebar = ({
                                         borderColor: selectedNoteId === note.id ? 'primary.light' : 'divider',
                                     },
                                     transition: 'all 0.2s ease',
+                                    '& .pin-button': {
+                                        opacity: note.isPinned ? 1 : 0,
+                                        transition: 'opacity 0.2s ease',
+                                    },
+                                    '& .delete-button': {
+                                        opacity: 0,
+                                        transition: 'opacity 0.2s ease',
+                                    },
+                                    '&:hover .pin-button, &:hover .delete-button': {
+                                        opacity: 1,
+                                    },
                                 }}
                             >
                                 <Box sx={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', width: '100%', mb: 0.5 }}>
@@ -193,6 +216,7 @@ const Sidebar = ({
                                     </Typography>
                                     <Tooltip title={note.isPinned ? "Unpin" : "Pin"}>
                                         <IconButton
+                                            className="pin-button"
                                             size="small"
                                             onClick={(e) => {
                                                 e.stopPropagation();
@@ -231,11 +255,11 @@ const Sidebar = ({
                                 >
                                     {note.content.replace(/<[^>]*>/g, '').substring(0, 100) || 'No additional content'}
                                 </Typography>
-                                <Box sx={{ display: 'flex', alignItems: 'center', width: '100%', justifyContent: 'space-between', flexWrap: 'wrap', gap: 1 }}>
+                                <Box sx={{ display: 'flex', flexDirection: 'column', width: '100%', gap: 0.5, position: 'relative' }}>
                                     <Typography variant="caption" sx={{ color: 'text.disabled', fontWeight: 600, fontSize: '10px' }}>
                                         {note.updatedAt ? format(note.updatedAt.toDate(), 'MMM dd') : 'Just now'}
                                     </Typography>
-                                    <Box sx={{ display: 'flex', gap: 0.5, flexWrap: 'wrap' }}>
+                                    <Box sx={{ display: 'flex', gap: 0.5, flexWrap: 'wrap', pr: 4 }}>
                                         {note.categoryIds?.map(catId => {
                                             const category = categories.find(c => c.id === catId);
                                             if (!category) return null;
@@ -244,18 +268,38 @@ const Sidebar = ({
                                                     key={catId}
                                                     label={category.name}
                                                     size="small"
+                                                    color="primary"
+                                                    variant="filled"
                                                     sx={{
                                                         height: 16,
                                                         fontSize: '9px',
                                                         fontWeight: 700,
-                                                        backgroundColor: 'action.selected',
-                                                        color: 'text.secondary',
+                                                        color: '#fff',
                                                         '& .MuiChip-label': { px: 1 }
                                                     }}
                                                 />
                                             );
                                         })}
                                     </Box>
+                                    <Tooltip title="Delete Note">
+                                        <IconButton
+                                            className="delete-button"
+                                            size="small"
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                onDeleteNote(note.id);
+                                            }}
+                                            sx={{
+                                                position: 'absolute',
+                                                bottom: -4,
+                                                right: -8,
+                                                color: 'text.disabled',
+                                                '&:hover': { color: 'error.main' }
+                                            }}
+                                        >
+                                            <Trash2 size={14} />
+                                        </IconButton>
+                                    </Tooltip>
                                 </Box>
                             </ListItemButton>
                         </ListItem>

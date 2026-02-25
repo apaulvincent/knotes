@@ -1,8 +1,8 @@
+import { Box, Chip, Divider, Menu, MenuItem, TextField, Tooltip, Typography } from '@mui/material';
+import { Check, Plus, Search } from 'lucide-react';
 import React, { useState } from 'react';
-import { Box, Chip, TextField, Tooltip, Menu, MenuItem, Divider, Typography } from '@mui/material';
-import { Plus, Check, Search } from 'lucide-react';
-import { Category } from '../../types/note';
 import { useNavigate } from 'react-router-dom';
+import { Category } from '../../types/note';
 
 interface NoteCategoryChipsProps {
     categories: Category[];
@@ -73,6 +73,7 @@ const NoteCategoryChips = ({ categories, selectedCategoryIds = [], onCategoryCha
                     sx={{
                         fontWeight: 600,
                         backgroundColor: 'primary.main',
+                        color: '#fff',
                         '&:hover': {
                             backgroundColor: 'primary.dark',
                         },
