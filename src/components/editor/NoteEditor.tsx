@@ -372,7 +372,7 @@ const NoteEditor = ({ content, onChange, editable = true }: NoteEditorProps) => 
                         }
                     }
                 }}
-                onClick={(e) => {
+                onDoubleClick={(e) => {
                     const target = e.target as HTMLElement;
                     if (target.tagName === 'IMG') {
                         setPreviewImage((target as HTMLImageElement).src);

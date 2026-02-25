@@ -64,13 +64,15 @@ const ResizableImageNode = (props: NodeViewProps) => {
                 <img
                     src={node.attrs.src}
                     alt={node.attrs.alt}
+                    onDoubleClick={openFullScreen}
                     style={{
                         width: resizing ? width : node.attrs.width || 'auto',
                         height: 'auto',
                         display: 'inline-block',
                         borderRadius: '4px',
                         maxWidth: '100%',
-                        verticalAlign: 'bottom'
+                        verticalAlign: 'bottom',
+                        cursor: 'pointer'
                     }}
                 />
 
