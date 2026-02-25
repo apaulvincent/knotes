@@ -36,7 +36,7 @@ function App() {
   const {
     notes, categories, loading: notesLoading, error: notesError, hasMore, fetchNotes,
     loadMoreNotes, resetNoteLimit, getNote, addNote, updateNote,
-    deleteNote, addCategory
+    deleteNote, addCategory, updateCategory
   } = useNotes(user?.uid);
 
   const { noteId, categoryId } = useParams<{ noteId?: string; categoryId?: string }>();
@@ -350,7 +350,11 @@ function App() {
               </Box>
             </Paper>
           ) : (
-            <CategoryDirectory categories={categories} onCategorySelect={(id) => handleCategorySelect(id || 'all')} />
+            <CategoryDirectory 
+              categories={categories} 
+              onCategorySelect={(id) => handleCategorySelect(id || 'all')} 
+              onUpdateCategory={updateCategory}
+            />
           )}
         </Box>
 

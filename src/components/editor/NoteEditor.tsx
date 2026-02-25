@@ -1,17 +1,32 @@
-import { useEditor, EditorContent } from '@tiptap/react';
-import StarterKit from '@tiptap/starter-kit';
-import { ResizableImage } from './extensions/ResizableImage';
-import Link from '@tiptap/extension-link';
-import TaskList from '@tiptap/extension-task-list';
-import TaskItem from '@tiptap/extension-task-item';
+import { Box, ButtonGroup, Dialog, DialogContent, Divider, IconButton, Menu, MenuItem, Paper, Tooltip } from '@mui/material';
 import CodeBlockLowlight from '@tiptap/extension-code-block-lowlight';
+import Link from '@tiptap/extension-link';
+import TaskItem from '@tiptap/extension-task-item';
+import TaskList from '@tiptap/extension-task-list';
+import Underline from '@tiptap/extension-underline';
+import { EditorContent, useEditor } from '@tiptap/react';
+import StarterKit from '@tiptap/starter-kit';
 import { common, createLowlight } from 'lowlight';
-import { Box, ButtonGroup, Tooltip, IconButton, Paper, Divider, Dialog, DialogContent } from '@mui/material';
 import {
-    Bold, Italic, List, ListOrdered, Code, Image as ImageIcon,
-    Link as LinkIcon, Quote as QuoteIcon, Undo, Redo, X, ListTodo
+    Bold,
+    ChevronDown,
+    Code,
+    Heading1, Heading2, Heading3, Heading4, Heading5, Heading6,
+    Image as ImageIcon,
+    Italic,
+    Link as LinkIcon,
+    List, ListOrdered,
+    ListTodo,
+    Quote as QuoteIcon,
+    Redo,
+    Strikethrough,
+    Type,
+    Underline as UnderlineIcon,
+    Undo,
+    X
 } from 'lucide-react';
 import { useEffect, useState } from 'react';
+import { ResizableImage } from './extensions/ResizableImage';
 
 const lowlight = createLowlight(common);
 
@@ -40,6 +55,7 @@ const NoteEditor = ({ content, onChange, editable = true }: NoteEditorProps) => 
                     class: 'editor-link',
                 },
             }),
+            Underline,
             CodeBlockLowlight.configure({
                 lowlight,
             }),
@@ -54,6 +70,25 @@ const NoteEditor = ({ content, onChange, editable = true }: NoteEditorProps) => 
         },
         editable: editable,
     });
+
+    const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
+
+    const handleHeadingClick = (event: React.MouseEvent<HTMLButtonElement>) => {
+        setAnchorEl(event.currentTarget);
+    };
+
+    const handleHeadingClose = () => {
+        setAnchorEl(null);
+    };
+
+    const setHeading = (level: any) => {
+        if (level === 0) {
+            editor.chain().focus().setParagraph().run();
+        } else {
+            editor.chain().focus().toggleHeading({ level }).run();
+        }
+        handleHeadingClose();
+    };
 
     useEffect(() => {
         if (editor && content !== editor.getHTML()) {
@@ -114,6 +149,48 @@ const NoteEditor = ({ content, onChange, editable = true }: NoteEditorProps) => 
                     }}
                 >
                     <ButtonGroup variant="text" size="small">
+                        <Tooltip title="Text Style">
+                            <IconButton
+                                onClick={handleHeadingClick}
+                                color={editor.isActive('heading') ? 'primary' : 'default'}
+                            >
+                                <Type size={20} />
+                                <ChevronDown size={14} />
+                            </IconButton>
+                        </Tooltip>
+                        <Menu
+                            anchorEl={anchorEl}
+                            open={Boolean(anchorEl)}
+                            onClose={handleHeadingClose}
+                        >
+                            <MenuItem onClick={() => setHeading(0)} selected={editor.isActive('paragraph')}>
+                                <Type size={18} style={{ marginRight: 8 }} /> Paragraph
+                            </MenuItem>
+                            <Divider />
+                            <MenuItem onClick={() => setHeading(1)} selected={editor.isActive('heading', { level: 1 })}>
+                                <Heading1 size={18} style={{ marginRight: 8 }} /> Heading 1
+                            </MenuItem>
+                            <MenuItem onClick={() => setHeading(2)} selected={editor.isActive('heading', { level: 2 })}>
+                                <Heading2 size={18} style={{ marginRight: 8 }} /> Heading 2
+                            </MenuItem>
+                            <MenuItem onClick={() => setHeading(3)} selected={editor.isActive('heading', { level: 3 })}>
+                                <Heading3 size={18} style={{ marginRight: 8 }} /> Heading 3
+                            </MenuItem>
+                            <MenuItem onClick={() => setHeading(4)} selected={editor.isActive('heading', { level: 4 })}>
+                                <Heading4 size={18} style={{ marginRight: 8 }} /> Heading 4
+                            </MenuItem>
+                            <MenuItem onClick={() => setHeading(5)} selected={editor.isActive('heading', { level: 5 })}>
+                                <Heading5 size={18} style={{ marginRight: 8 }} /> Heading 5
+                            </MenuItem>
+                            <MenuItem onClick={() => setHeading(6)} selected={editor.isActive('heading', { level: 6 })}>
+                                <Heading6 size={18} style={{ marginRight: 8 }} /> Heading 6
+                            </MenuItem>
+                        </Menu>
+                    </ButtonGroup>
+
+                    <Divider orientation="vertical" flexItem sx={{ mx: 0.5 }} />
+
+                    <ButtonGroup variant="text" size="small">
                         <Tooltip title="Bold">
                             <IconButton
                                 onClick={() => editor.chain().focus().toggleBold().run()}
@@ -128,6 +205,22 @@ const NoteEditor = ({ content, onChange, editable = true }: NoteEditorProps) => 
                                 color={editor.isActive('italic') ? 'primary' : 'default'}
                             >
                                 <Italic size={20} />
+                            </IconButton>
+                        </Tooltip>
+                        <Tooltip title="Underline">
+                            <IconButton
+                                onClick={() => editor.chain().focus().toggleUnderline().run()}
+                                color={editor.isActive('underline') ? 'primary' : 'default'}
+                            >
+                                <UnderlineIcon size={20} />
+                            </IconButton>
+                        </Tooltip>
+                        <Tooltip title="Strikethrough">
+                            <IconButton
+                                onClick={() => editor.chain().focus().toggleStrike().run()}
+                                color={editor.isActive('strike') ? 'primary' : 'default'}
+                            >
+                                <Strikethrough size={20} />
                             </IconButton>
                         </Tooltip>
                     </ButtonGroup>

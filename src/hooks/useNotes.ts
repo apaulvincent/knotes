@@ -163,6 +163,12 @@ export const useNotes = (userId: string | undefined) => {
     return docRef.id;
   };
 
+  const updateCategory = async (id: string, name: string) => {
+    if (!userId) return;
+    const catRef = doc(db, 'categories', id);
+    await updateDoc(catRef, { name });
+  };
+
   return {
     notes,
     categories,
@@ -177,5 +183,6 @@ export const useNotes = (userId: string | undefined) => {
     updateNote,
     deleteNote,
     addCategory,
+    updateCategory
   };
 };
