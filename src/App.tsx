@@ -137,6 +137,19 @@ function App() {
     navigate(`/notes/${id}?category=${categoryTab}`);
   };
 
+  // Keyboard shortcuts
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.key === 'n') {
+        e.preventDefault();
+        handleAddNote();
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [handleAddNote]);
+
   // Auto-save logic
   useEffect(() => {
     if (!activeNote || isSaving) return;
