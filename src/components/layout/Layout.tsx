@@ -112,7 +112,7 @@ const Layout = ({
                         </Tooltip>
                     </Box>
                 )}
-                <Box sx={{ flexGrow: 1, p: { xs: 0, sm: 4 }, overflow: 'hidden' }}>
+                <Box sx={{ flexGrow: 1, p: { xs: 0, sm: 2 }, overflow: 'hidden' }}>
                     {children}
                 </Box>
             </Box>

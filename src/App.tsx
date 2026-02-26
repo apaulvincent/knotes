@@ -1,13 +1,13 @@
 import {
-    Box,
-    Button,
-    CssBaseline,
-    Fab,
-    IconButton,
-    Paper, TextField,
-    Tooltip,
-    useMediaQuery,
-    useTheme
+  Box,
+  Button,
+  CssBaseline,
+  Fab,
+  IconButton,
+  Paper, TextField,
+  Tooltip,
+  useMediaQuery,
+  useTheme
 } from '@mui/material';
 import { ArrowUp, Loader2, Plus, Save, Trash2 } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
@@ -308,7 +308,7 @@ function App() {
         loading={notesLoading}
         error={notesError}
       >
-        <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
+        <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column', overflowY: 'auto', m: 0 }}>
           {isAccountPage ? (
             <AccountPage user={user} onLogout={handleLogout} onUpdateProfile={handleUpdateProfile} />
           ) : activeNote ? (

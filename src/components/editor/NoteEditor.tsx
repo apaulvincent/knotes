@@ -7,22 +7,22 @@ import { EditorContent, useEditor } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import { common, createLowlight } from 'lowlight';
 import {
-    Bold,
-    ChevronDown,
-    Code,
-    Heading1, Heading2, Heading3, Heading4, Heading5, Heading6,
-    Image as ImageIcon,
-    Italic,
-    Link as LinkIcon,
-    List, ListOrdered,
-    ListTodo,
-    Quote as QuoteIcon,
-    Redo,
-    Strikethrough,
-    Type,
-    Underline as UnderlineIcon,
-    Undo,
-    X
+  Bold,
+  ChevronDown,
+  Code,
+  Heading1, Heading2, Heading3, Heading4, Heading5, Heading6,
+  Image as ImageIcon,
+  Italic,
+  Link as LinkIcon,
+  List, ListOrdered,
+  ListTodo,
+  Quote as QuoteIcon,
+  Redo,
+  Strikethrough,
+  Type,
+  Underline as UnderlineIcon,
+  Undo,
+  X
 } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { CodeBlockEnhanced } from './extensions/CodeBlockEnhanced';
@@ -141,8 +141,7 @@ const NoteEditor = ({ content, onChange, editable = true }: NoteEditorProps) => 
                         gap: 0.5,
                         backgroundColor: 'background.paper',
                         borderRadius: 0,
-                        borderBottom: '1px solid',
-                        borderColor: 'divider',
+                        border: 'none',
                         position: 'sticky',
                         top: 0,
                         left: 0,

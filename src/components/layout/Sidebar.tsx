@@ -5,6 +5,7 @@ import { User } from 'firebase/auth';
 import { PanelLeftClose, Pin, Search, Trash2 } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useSettings } from '../../contexts/SettingsContext';
 import { Category, Note } from '../../types/note';
 import Logo from '../common/Logo';
 
@@ -42,6 +43,7 @@ const Sidebar = ({
     onToggleSidebar
 }: SidebarProps) => {
     const navigate = useNavigate();
+    const { sidebarSettings } = useSettings();
     const [searchQuery, setSearchQuery] = useState('');
     const observerRef = useRef<HTMLDivElement | null>(null);
 
@@ -249,48 +251,54 @@ const Sidebar = ({
                                         </IconButton>
                                     </Tooltip>
                                 </Box>
-                                <Typography
-                                    variant="caption"
-                                    color="text.secondary"
-                                    sx={{
-                                        display: '-webkit-box',
-                                        WebkitLineClamp: 2,
-                                        WebkitBoxOrient: 'vertical',
-                                        overflow: 'hidden',
-                                        lineHeight: 1.5,
-                                        mb: 1,
-                                        opacity: 0.8,
-                                        wordBreak: 'break-all'
-                                    }}
-                                >
-                                    {note.content.replace(/<[^>]*>/g, '').substring(0, 100) || 'No additional content'}
-                                </Typography>
-                                <Box sx={{ display: 'flex', flexDirection: 'column', width: '100%', gap: 0.5, position: 'relative' }}>
-                                    <Typography variant="caption" sx={{ color: 'text.disabled', fontWeight: 600, fontSize: '10px' }}>
-                                        {note.updatedAt ? format(note.updatedAt.toDate(), 'MMM dd') : 'Just now'}
+                                {sidebarSettings.showPreviewText && (
+                                    <Typography
+                                        variant="caption"
+                                        color="text.secondary"
+                                        sx={{
+                                            display: '-webkit-box',
+                                            WebkitLineClamp: 2,
+                                            WebkitBoxOrient: 'vertical',
+                                            overflow: 'hidden',
+                                            lineHeight: 1.5,
+                                            mb: 1,
+                                            opacity: 0.8,
+                                            wordBreak: 'break-all'
+                                        }}
+                                    >
+                                        {note.content.replace(/<[^>]*>/g, '').substring(0, 100) || 'No additional content'}
                                     </Typography>
-                                    <Box sx={{ display: 'flex', gap: 0.5, flexWrap: 'wrap', pr: 4 }}>
-                                        {note.categoryIds?.map(catId => {
-                                            const category = categories.find(c => c.id === catId);
-                                            if (!category) return null;
-                                            return (
-                                                <Chip
-                                                    key={catId}
-                                                    label={category.name}
-                                                    size="small"
-                                                    color="primary"
-                                                    variant="filled"
-                                                    sx={{
-                                                        height: 16,
-                                                        fontSize: '9px',
-                                                        fontWeight: 700,
-                                                        color: '#fff',
-                                                        '& .MuiChip-label': { px: 1 }
-                                                    }}
-                                                />
-                                            );
-                                        })}
-                                    </Box>
+                                )}
+                                <Box sx={{ display: 'flex', flexDirection: 'column', width: '100%', gap: 0.5, position: 'relative' }}>
+                                    {sidebarSettings.showDate && (
+                                        <Typography variant="caption" sx={{ color: 'text.disabled', fontWeight: 600, fontSize: '10px' }}>
+                                            {note.updatedAt ? format(note.updatedAt.toDate(), 'MMM dd') : 'Just now'}
+                                        </Typography>
+                                    )}
+                                    {sidebarSettings.showCategories && (
+                                        <Box sx={{ display: 'flex', gap: 0.5, flexWrap: 'wrap', pr: 4 }}>
+                                            {note.categoryIds?.map(catId => {
+                                                const category = categories.find(c => c.id === catId);
+                                                if (!category) return null;
+                                                return (
+                                                    <Chip
+                                                        key={catId}
+                                                        label={category.name}
+                                                        size="small"
+                                                        color="primary"
+                                                        variant="filled"
+                                                        sx={{
+                                                            height: 16,
+                                                            fontSize: '9px',
+                                                            fontWeight: 700,
+                                                            color: '#fff',
+                                                            '& .MuiChip-label': { px: 1 }
+                                                        }}
+                                                    />
+                                                );
+                                            })}
+                                        </Box>
+                                    )}
                                     <Tooltip title="Delete Note">
                                         <IconButton
                                             className="delete-button"

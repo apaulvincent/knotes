@@ -1,8 +1,9 @@
-import { Avatar, Box, Button, Divider, IconButton, InputAdornment, Paper, Stack, TextField, ToggleButton, ToggleButtonGroup, Typography } from '@mui/material';
+import { Avatar, Box, Button, Divider, FormControlLabel, IconButton, InputAdornment, Paper, Stack, Switch, TextField, ToggleButton, ToggleButtonGroup, Typography } from '@mui/material';
 import { format } from 'date-fns';
 import { User } from 'firebase/auth';
-import { Calendar, Check, Edit2, LogOut, Mail, Monitor, Moon, Shield, Sun, Trash2 } from 'lucide-react';
+import { Calendar, Check, Edit2, Layout, LogOut, Mail, Monitor, Moon, Shield, Sun, Trash2 } from 'lucide-react';
 import { useState } from 'react';
+import { useSettings } from '../../contexts/SettingsContext';
 import { useThemeContext } from '../../contexts/ThemeContext';
 
 interface AccountPageProps {
@@ -13,6 +14,7 @@ interface AccountPageProps {
 
 const AccountPage = ({ user, onLogout, onUpdateProfile }: AccountPageProps) => {
     const { mode, setMode } = useThemeContext();
+    const { sidebarSettings, updateSidebarSettings } = useSettings();
     const [isEditing, setIsEditing] = useState(false);
     const [name, setName] = useState(user.displayName || '');
     const [loading, setLoading] = useState(false);
@@ -223,6 +225,48 @@ const AccountPage = ({ user, onLogout, onUpdateProfile }: AccountPageProps) => {
                             </Box>
                         </ToggleButton>
                     </ToggleButtonGroup>
+
+                    <Divider sx={{ my: 4 }} />
+
+                    <Typography variant="subtitle1" sx={{ fontWeight: 700, mb: 1, display: 'flex', alignItems: 'center', gap: 1 }}>
+                        <Layout size={18} /> Sidebar Settings
+                    </Typography>
+                    <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                        Control the visibility of elements in the note list.
+                    </Typography>
+
+                    <Stack spacing={1}>
+                        <FormControlLabel
+                            control={
+                                <Switch 
+                                    size="small"
+                                    checked={sidebarSettings.showCategories}
+                                    onChange={(e) => updateSidebarSettings({ showCategories: e.target.checked })}
+                                />
+                            }
+                            label={<Typography variant="body2">Show Categories</Typography>}
+                        />
+                        <FormControlLabel
+                            control={
+                                <Switch 
+                                    size="small"
+                                    checked={sidebarSettings.showPreviewText}
+                                    onChange={(e) => updateSidebarSettings({ showPreviewText: e.target.checked })}
+                                />
+                            }
+                            label={<Typography variant="body2">Show Preview Text</Typography>}
+                        />
+                        <FormControlLabel
+                            control={
+                                <Switch 
+                                    size="small"
+                                    checked={sidebarSettings.showDate}
+                                    onChange={(e) => updateSidebarSettings({ showDate: e.target.checked })}
+                                />
+                            }
+                            label={<Typography variant="body2">Show Date</Typography>}
+                        />
+                    </Stack>
                 </Paper>
 
                 {/* Logout Section */}
