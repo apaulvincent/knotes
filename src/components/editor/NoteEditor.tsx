@@ -1,5 +1,4 @@
-import { Box, ButtonGroup, Dialog, DialogContent, Divider, IconButton, Menu, MenuItem, Paper, Tooltip } from '@mui/material';
-import CodeBlockLowlight from '@tiptap/extension-code-block-lowlight';
+import { Box, ButtonGroup, Dialog, DialogContent, Divider, IconButton, Menu, MenuItem, Paper, Tooltip, useMediaQuery, useTheme } from '@mui/material';
 import Link from '@tiptap/extension-link';
 import TaskItem from '@tiptap/extension-task-item';
 import TaskList from '@tiptap/extension-task-list';
@@ -26,6 +25,7 @@ import {
     X
 } from 'lucide-react';
 import { useEffect, useState } from 'react';
+import { CodeBlockEnhanced } from './extensions/CodeBlockEnhanced';
 import { ResizableImage } from './extensions/ResizableImage';
 
 const lowlight = createLowlight(common);
@@ -38,6 +38,9 @@ interface NoteEditorProps {
 
 const NoteEditor = ({ content, onChange, editable = true }: NoteEditorProps) => {
     const [previewImage, setPreviewImage] = useState<string | null>(null);
+    const theme = useTheme();
+    const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
+    const iconSize = isMobile ? 18 : 20;
 
     const editor = useEditor({
         extensions: [
@@ -56,7 +59,7 @@ const NoteEditor = ({ content, onChange, editable = true }: NoteEditorProps) => 
                 },
             }),
             Underline,
-            CodeBlockLowlight.configure({
+            CodeBlockEnhanced.configure({
                 lowlight,
             }),
             TaskList,
@@ -132,7 +135,7 @@ const NoteEditor = ({ content, onChange, editable = true }: NoteEditorProps) => 
                 <Paper
                     elevation={0}
                     sx={{
-                        p: 1,
+                        p: { xs: 0.5, sm: 1 },
                         display: 'flex',
                         flexWrap: 'wrap',
                         gap: 0.5,
@@ -154,7 +157,7 @@ const NoteEditor = ({ content, onChange, editable = true }: NoteEditorProps) => 
                                 onClick={handleHeadingClick}
                                 color={editor.isActive('heading') ? 'primary' : 'default'}
                             >
-                                <Type size={20} />
+                                <Type size={iconSize} />
                                 <ChevronDown size={14} />
                             </IconButton>
                         </Tooltip>
@@ -196,7 +199,7 @@ const NoteEditor = ({ content, onChange, editable = true }: NoteEditorProps) => 
                                 onClick={() => editor.chain().focus().toggleBold().run()}
                                 color={editor.isActive('bold') ? 'primary' : 'default'}
                             >
-                                <Bold size={20} />
+                                <Bold size={iconSize} />
                             </IconButton>
                         </Tooltip>
                         <Tooltip title="Italic">
@@ -204,7 +207,7 @@ const NoteEditor = ({ content, onChange, editable = true }: NoteEditorProps) => 
                                 onClick={() => editor.chain().focus().toggleItalic().run()}
                                 color={editor.isActive('italic') ? 'primary' : 'default'}
                             >
-                                <Italic size={20} />
+                                <Italic size={iconSize} />
                             </IconButton>
                         </Tooltip>
                         <Tooltip title="Underline">
@@ -212,7 +215,7 @@ const NoteEditor = ({ content, onChange, editable = true }: NoteEditorProps) => 
                                 onClick={() => editor.chain().focus().toggleUnderline().run()}
                                 color={editor.isActive('underline') ? 'primary' : 'default'}
                             >
-                                <UnderlineIcon size={20} />
+                                <UnderlineIcon size={iconSize} />
                             </IconButton>
                         </Tooltip>
                         <Tooltip title="Strikethrough">
@@ -220,7 +223,7 @@ const NoteEditor = ({ content, onChange, editable = true }: NoteEditorProps) => 
                                 onClick={() => editor.chain().focus().toggleStrike().run()}
                                 color={editor.isActive('strike') ? 'primary' : 'default'}
                             >
-                                <Strikethrough size={20} />
+                                <Strikethrough size={iconSize} />
                             </IconButton>
                         </Tooltip>
                     </ButtonGroup>
@@ -233,7 +236,7 @@ const NoteEditor = ({ content, onChange, editable = true }: NoteEditorProps) => 
                                 onClick={() => editor.chain().focus().toggleBulletList().run()}
                                 color={editor.isActive('bulletList') ? 'primary' : 'default'}
                             >
-                                <List size={20} />
+                                <List size={iconSize} />
                             </IconButton>
                         </Tooltip>
                         <Tooltip title="Ordered List">
@@ -241,7 +244,7 @@ const NoteEditor = ({ content, onChange, editable = true }: NoteEditorProps) => 
                                 onClick={() => editor.chain().focus().toggleOrderedList().run()}
                                 color={editor.isActive('orderedList') ? 'primary' : 'default'}
                             >
-                                <ListOrdered size={20} />
+                                <ListOrdered size={iconSize} />
                             </IconButton>
                         </Tooltip>
                         <Tooltip title="Checklist">
@@ -249,7 +252,7 @@ const NoteEditor = ({ content, onChange, editable = true }: NoteEditorProps) => 
                                 onClick={() => editor.chain().focus().toggleTaskList().run()}
                                 color={editor.isActive('taskList') ? 'primary' : 'default'}
                             >
-                                <ListTodo size={20} />
+                                <ListTodo size={iconSize} />
                             </IconButton>
                         </Tooltip>
                     </ButtonGroup>
@@ -262,7 +265,7 @@ const NoteEditor = ({ content, onChange, editable = true }: NoteEditorProps) => 
                                 onClick={() => editor.chain().focus().toggleCodeBlock().run()}
                                 color={editor.isActive('codeBlock') ? 'primary' : 'default'}
                             >
-                                <Code size={20} />
+                                <Code size={iconSize} />
                             </IconButton>
                         </Tooltip>
                         <Tooltip title="Quote">
@@ -270,7 +273,7 @@ const NoteEditor = ({ content, onChange, editable = true }: NoteEditorProps) => 
                                 onClick={() => editor.chain().focus().toggleBlockquote().run()}
                                 color={editor.isActive('blockquote') ? 'primary' : 'default'}
                             >
-                                <QuoteIcon size={20} />
+                                <QuoteIcon size={iconSize} />
                             </IconButton>
                         </Tooltip>
                     </ButtonGroup>
@@ -283,12 +286,12 @@ const NoteEditor = ({ content, onChange, editable = true }: NoteEditorProps) => 
                                 onClick={setLink}
                                 color={editor.isActive('link') ? 'primary' : 'default'}
                             >
-                                <LinkIcon size={20} />
+                                <LinkIcon size={iconSize} />
                             </IconButton>
                         </Tooltip>
                         <Tooltip title="Image">
                             <IconButton onClick={addImage}>
-                                <ImageIcon size={20} />
+                                <ImageIcon size={iconSize} />
                             </IconButton>
                         </Tooltip>
                     </ButtonGroup>
@@ -297,10 +300,10 @@ const NoteEditor = ({ content, onChange, editable = true }: NoteEditorProps) => 
 
                     <ButtonGroup variant="text" size="small">
                         <IconButton onClick={() => editor.chain().focus().undo().run()} disabled={!editor.can().undo()}>
-                            <Undo size={20} />
+                            <Undo size={iconSize} />
                         </IconButton>
                         <IconButton onClick={() => editor.chain().focus().redo().run()} disabled={!editor.can().redo()}>
-                            <Redo size={20} />
+                            <Redo size={iconSize} />
                         </IconButton>
                     </ButtonGroup>
                 </Paper>
@@ -309,9 +312,9 @@ const NoteEditor = ({ content, onChange, editable = true }: NoteEditorProps) => 
             <Box
                 sx={{
                     flexGrow: 1,
-                    px: 3,
-                    pb: 4,
-                    pt: 2,
+                    px: { xs: 1, sm: 3 },
+                    pb: { xs: 1, sm: 4 },
+                    pt: 1,
                     '& .tiptap': {
                         outline: 'none',
                         minHeight: '200px',
@@ -343,6 +346,12 @@ const NoteEditor = ({ content, onChange, editable = true }: NoteEditorProps) => 
                             backgroundColor: 'transparent',
                             padding: 0,
                             color: 'inherit',
+                        },
+                        '& .code-block-enhanced': {
+                            position: 'relative',
+                            '& pre': {
+                                margin: '1.5rem 0',
+                            }
                         },
                         '& .resizable-image-wrapper': {
                             display: 'inline-block',

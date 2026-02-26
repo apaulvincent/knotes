@@ -83,7 +83,17 @@ const Sidebar = ({
                 backgroundColor: 'background.paper',
                 overflow: 'hidden',
                 transition: 'all 0.3s ease',
-                position: 'relative'
+                position: { xs: 'absolute', sm: 'relative' },
+                zIndex: { xs: 1300, sm: 'auto' },
+                boxShadow: { xs: isSidebarOpen ? 3 : 0, sm: 0 },
+                transform: { 
+                    xs: isSidebarOpen ? 'translateX(0)' : 'translateX(-100%)', 
+                    sm: 'none' 
+                },
+                visibility: {
+                    xs: isSidebarOpen ? 'visible' : 'hidden',
+                    sm: 'visible'
+                }
             }}
         >
             {/* Header with Space Name */}

@@ -1,4 +1,4 @@
-import { Box, Chip, Divider, Menu, MenuItem, TextField, Tooltip, Typography } from '@mui/material';
+import { Box, Chip, Divider, Menu, MenuItem, TextField, Tooltip, Typography, useMediaQuery, useTheme } from '@mui/material';
 import { Check, Plus, Search } from 'lucide-react';
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
@@ -16,6 +16,8 @@ const NoteCategoryChips = ({ categories, selectedCategoryIds = [], onCategoryCha
     const [newCategoryName, setNewCategoryName] = useState('');
     const [filterText, setFilterText] = useState('');
     const navigate = useNavigate();
+    const theme = useTheme();
+    const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
 
     const open = Boolean(anchorEl);
 
@@ -57,7 +59,7 @@ const NoteCategoryChips = ({ categories, selectedCategoryIds = [], onCategoryCha
     );
 
     return (
-        <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap', mb: 2, alignItems: 'center' }}>
+        <Box sx={{ display: 'flex', gap: { xs: 0.5, sm: 1 }, flexWrap: 'wrap', mb: { xs: 1, sm: 2 }, alignItems: 'center' }}>
             {/* Show only selected categories */}
             {selectedCategories.map((cat) => (
                 <Chip
@@ -65,6 +67,7 @@ const NoteCategoryChips = ({ categories, selectedCategoryIds = [], onCategoryCha
                     label={cat.name}
                     color="primary"
                     variant="filled"
+                    size={isMobile ? 'small' : 'medium'}
                     onClick={() => navigate(`/categories/${cat.id}`)}
                     onDelete={(e) => {
                         e.stopPropagation();
@@ -88,14 +91,15 @@ const NoteCategoryChips = ({ categories, selectedCategoryIds = [], onCategoryCha
             {/* Plus button to open menu */}
             <Tooltip title="Add Category">
                 <Chip
-                    icon={<Plus size={16} />}
+                    icon={<Plus size={isMobile ? 14 : 16} />}
                     onClick={handleOpenMenu}
                     variant="outlined"
+                    size={isMobile ? 'small' : 'medium'}
                     sx={{
                         borderStyle: 'dashed',
                         fontWeight: 600,
-                        width: '32px',
-                        height: '32px',
+                        width: isMobile ? '26px' : '32px',
+                        height: isMobile ? '26px' : '32px',
                         '& .MuiChip-label': { display: 'none' },
                         '& .MuiChip-icon': {
                             m: 0,

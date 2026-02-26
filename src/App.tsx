@@ -1,14 +1,16 @@
 import {
-  Box,
-  Button,
-  CssBaseline,
-  Fab,
-  IconButton,
-  Paper, TextField,
-  Tooltip
+    Box,
+    Button,
+    CssBaseline,
+    Fab,
+    IconButton,
+    Paper, TextField,
+    Tooltip,
+    useMediaQuery,
+    useTheme
 } from '@mui/material';
-import { Loader2, Plus, Save, Trash2 } from 'lucide-react';
-import { useCallback, useEffect, useState } from 'react';
+import { ArrowUp, Loader2, Plus, Save, Trash2 } from 'lucide-react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import AccountPage from './components/account/AccountPage';
 import EmailVerification from './components/auth/EmailVerification';
@@ -42,12 +44,24 @@ function App() {
   const { noteId, categoryId } = useParams<{ noteId?: string; categoryId?: string }>();
   const navigate = useNavigate();
   const location = useLocation();
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const isAccountPage = location.pathname === '/account';
 
   const [categoryTab, setCategoryTab] = useState('all');
   const [activeNote, setActiveNote] = useState<Note | null>(null);
   const [isSaving, setIsSaving] = useState(false);
   const [isVerified, setIsVerified] = useState(false);
+  const [showScrollTop, setShowScrollTop] = useState(false);
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
+
+  const handleScroll = (e: React.UIEvent<HTMLDivElement>) => {
+    setShowScrollTop(e.currentTarget.scrollTop > 300);
+  };
+
+  const scrollToTop = () => {
+    scrollContainerRef.current?.scrollTo({ top: 0, behavior: 'smooth' });
+  };
 
 
 
@@ -313,9 +327,10 @@ function App() {
                 sx={{
                   display: 'flex',
                   flexDirection: 'column',
-                  p: 3,
-                  pb: 2,
-                  gap: 1.5,
+                  p: { xs: 1.5, sm: 3 },
+                   pb: { xs: 1, sm: 2 },
+                   pl: { xs: 1.5, sm: 3 }, // Restored compact padding from edge-to-edge
+                   gap: { xs: 1, sm: 1.5 },
                   bgcolor: 'background.paper',
                   zIndex: 11,
                   borderBottom: '1px solid',
@@ -331,19 +346,46 @@ function App() {
                     onAddCategory={addCategory}
                   />
 
-                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, pt: 0.5 }}>
-                    <IconButton onClick={handleDeleteNote} color="error" size="small">
-                      <Trash2 size={20} />
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: { xs: 0.5, sm: 1 }, pt: 0.5 }}>
+                    <IconButton onClick={handleDeleteNote} color="error" size="small" sx={{ p: { xs: 0.5, sm: 1 } }}>
+                      <Trash2 size={18} />
                     </IconButton>
-                    <Button
-                      variant="contained"
-                      startIcon={<Save size={18} color="white" />}
-                      onClick={handleSave}
-                      disabled={isSaving}
-                      sx={{ whiteSpace: 'nowrap', minWidth: '90px', color: 'white' }}
-                    >
-                      {isSaving ? 'Saving...' : 'Save'}
-                    </Button>
+                    {isMobile ? (
+                      <Tooltip title="Save Note">
+                        <IconButton
+                          onClick={handleSave}
+                          disabled={isSaving}
+                          sx={{ 
+                            bgcolor: 'primary.main',
+                            color: 'white',
+                            '&:hover': { bgcolor: 'primary.dark' },
+                            '&.Mui-disabled': { bgcolor: 'action.disabledBackground', color: 'action.disabled' },
+                            width: 32,
+                            height: 32,
+                            p: 0
+                          }}
+                        >
+                          {isSaving ? <Loader2 size={16} className="animate-spin" /> : <Save size={16} />}
+                        </IconButton>
+                      </Tooltip>
+                    ) : (
+                      <Button
+                        variant="contained"
+                        startIcon={<Save size={16} color="white" />}
+                        onClick={handleSave}
+                        disabled={isSaving}
+                        size="small"
+                        sx={{ 
+                          whiteSpace: 'nowrap', 
+                          minWidth: '90px', 
+                          px: 2,
+                          fontSize: '0.875rem',
+                          color: 'white' 
+                        }}
+                      >
+                        {isSaving ? '...' : 'Save'}
+                      </Button>
+                    )}
                   </Box>
                 </Box>
 
@@ -355,8 +397,8 @@ function App() {
                   onChange={(e) => setActiveNote({ ...activeNote, title: e.target.value })}
                   InputProps={{
                     disableUnderline: true,
-                    style: {
-                      fontSize: '1.75rem',
+                    sx: {
+                      fontSize: { xs: '1.25rem', sm: '1.75rem' },
                       fontWeight: 700,
                       color: 'inherit'
                     }
@@ -370,7 +412,11 @@ function App() {
                 />
               </Box>
 
-              <Box sx={{ flexGrow: 1, overflowY: 'auto' }}>
+              <Box 
+                ref={scrollContainerRef}
+                onScroll={handleScroll}
+                sx={{ flexGrow: 1, overflowY: 'auto', scrollBehavior: 'smooth' }}
+              >
                 <NoteEditor
                   key={activeNote.id}
                   content={activeNote.content}
@@ -388,25 +434,47 @@ function App() {
         </Box>
 
         {!isAccountPage && (
-          <Tooltip title="New Note" placement="left">
-            <Fab
-              color="primary"
-              aria-label="add"
-              onClick={handleAddNote}
-              sx={{
-                position: 'fixed',
-                bottom: 32,
-                right: 32,
-                boxShadow: '0 8px 16px rgba(99, 102, 241, 0.4)',
-                '&:hover': {
-                  transform: 'scale(1.1)',
-                  transition: 'transform 0.2s'
-                }
-              }}
-            >
-              <Plus size={28} color="white" />
-            </Fab>
-          </Tooltip>
+          <Box sx={{ position: 'fixed', bottom: { xs: 20, sm: 32 }, right: { xs: 20, sm: 32 }, display: 'flex', flexDirection: 'column', gap: 2, zIndex: 1100 }}>
+            {showScrollTop && (
+              <Tooltip title="Scroll to Top" placement="left">
+                <Fab
+                  color="secondary"
+                  size="small"
+                  onClick={scrollToTop}
+                  sx={{
+                    bgcolor: 'background.paper',
+                    color: 'text.secondary',
+                    '&:hover': {
+                      bgcolor: 'action.hover',
+                      color: 'primary.main',
+                      transform: 'scale(1.1)'
+                    },
+                    boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+                    transition: 'all 0.2s'
+                  }}
+                >
+                  <ArrowUp size={20} />
+                </Fab>
+              </Tooltip>
+            )}
+            <Tooltip title="New Note" placement="left">
+              <Fab
+                color="primary"
+                aria-label="add"
+                onClick={handleAddNote}
+                size={isMobile ? "medium" : "large"}
+                sx={{
+                  boxShadow: '0 8px 16px rgba(99, 102, 241, 0.4)',
+                  '&:hover': {
+                    transform: 'scale(1.1)',
+                    transition: 'transform 0.2s'
+                  }
+                }}
+              >
+                <Plus size={isMobile ? 24 : 28} color="white" />
+              </Fab>
+            </Tooltip>
+          </Box>
         )}
       </Layout>
     </>
