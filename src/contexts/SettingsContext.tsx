@@ -4,6 +4,7 @@ interface SidebarSettings {
     showCategories: boolean;
     showPreviewText: boolean;
     showDate: boolean;
+    width: number;
 }
 
 interface SettingsContextType {
@@ -19,7 +20,8 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         return saved ? JSON.parse(saved) : {
             showCategories: true,
             showPreviewText: true,
-            showDate: true
+            showDate: true,
+            width: 300
         };
     });
 

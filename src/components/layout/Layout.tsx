@@ -12,6 +12,7 @@ interface LayoutProps {
     onNoteSelect: (id: string) => void;
     onTogglePin: (id: string, currentStatus: boolean) => void;
     onDeleteNote: (id: string) => void;
+    onDuplicateNote: (id: string) => void;
     user: User | null;
     onProfileClick: () => void;
     hasMore: boolean;
@@ -28,6 +29,7 @@ const Layout = ({
     onNoteSelect,
     onTogglePin,
     onDeleteNote,
+    onDuplicateNote,
     user,
     onProfileClick,
     hasMore,
@@ -71,6 +73,7 @@ const Layout = ({
                 }}
                 onTogglePin={onTogglePin}
                 onDeleteNote={onDeleteNote}
+                onDuplicateNote={onDuplicateNote}
                 user={user}
                 onProfileClick={onProfileClick}
                 hasMore={hasMore}

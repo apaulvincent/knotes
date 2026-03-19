@@ -1,13 +1,16 @@
 import ClassOutlinedIcon from '@mui/icons-material/ClassOutlined';
-import { Avatar, Box, Chip, CircularProgress, Divider, IconButton, InputAdornment, List, ListItem, ListItemButton, TextField, Tooltip, Typography } from '@mui/material';
+import { Avatar, Box, Chip, CircularProgress, Divider, IconButton, InputAdornment, ListItem, ListItemButton, TextField, Tooltip, Typography } from '@mui/material';
 import { format } from 'date-fns';
 import { User } from 'firebase/auth';
-import { PanelLeftClose, Pin, Search, Trash2 } from 'lucide-react';
-import { useEffect, useRef, useState } from 'react';
+import { PanelLeftClose, Pin, Search, Trash2, Check, Copy } from 'lucide-react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useSettings } from '../../contexts/SettingsContext';
 import { Category, Note } from '../../types/note';
 import Logo from '../common/Logo';
+import Masonry from '@mui/lab/Masonry';
+import { motion, AnimatePresence } from 'framer-motion';
+
 
 interface SidebarProps {
     notes: Note[];
@@ -16,6 +19,7 @@ interface SidebarProps {
     onNoteSelect: (id: string) => void;
     onTogglePin: (id: string, currentStatus: boolean) => void;
     onDeleteNote: (id: string) => void;
+    onDuplicateNote: (id: string) => void;
     user: User | null;
     onProfileClick: () => void;
     hasMore: boolean;
@@ -33,6 +37,7 @@ const Sidebar = ({
     onNoteSelect,
     onTogglePin,
     onDeleteNote,
+    onDuplicateNote,
     user,
     onProfileClick,
     hasMore,
@@ -43,9 +48,51 @@ const Sidebar = ({
     onToggleSidebar
 }: SidebarProps) => {
     const navigate = useNavigate();
-    const { sidebarSettings } = useSettings();
+    const { sidebarSettings, updateSidebarSettings } = useSettings();
     const [searchQuery, setSearchQuery] = useState('');
     const observerRef = useRef<HTMLDivElement | null>(null);
+    const [noteToDelete, setNoteToDelete] = useState<string | null>(null);
+
+    const [sidebarWidth, setSidebarWidth] = useState(sidebarSettings.width);
+    const [isResizing, setIsResizing] = useState(false);
+
+    const startResizing = useCallback((e: React.MouseEvent) => {
+        e.preventDefault();
+        setIsResizing(true);
+    }, []);
+
+    const stopResizing = useCallback(() => {
+        setIsResizing(false);
+        updateSidebarSettings({ width: sidebarWidth });
+    }, [sidebarWidth, updateSidebarSettings]);
+
+    const resize = useCallback(
+        (e: MouseEvent) => {
+            if (isResizing) {
+                const newWidth = e.clientX;
+                const maxWidth = window.innerWidth * 0.7;
+                if (newWidth >= 300 && newWidth <= maxWidth) {
+                    setSidebarWidth(newWidth);
+                } else if (newWidth > maxWidth) {
+                    setSidebarWidth(maxWidth);
+                } else if (newWidth < 300) {
+                    setSidebarWidth(300);
+                }
+            }
+        },
+        [isResizing]
+    );
+
+    useEffect(() => {
+        if (isResizing) {
+            document.addEventListener('mousemove', resize);
+            document.addEventListener('mouseup', stopResizing);
+        }
+        return () => {
+            document.removeEventListener('mousemove', resize);
+            document.removeEventListener('mouseup', stopResizing);
+        };
+    }, [isResizing, resize, stopResizing]);
 
     useEffect(() => {
         const observer = new IntersectionObserver(
@@ -75,16 +122,15 @@ const Sidebar = ({
     return (
         <Box
             sx={{
-                width: isSidebarOpen ? 300 : 0,
-                minWidth: isSidebarOpen ? 300 : 0,
+                width: { xs: isSidebarOpen ? 300 : 0, sm: isSidebarOpen ? sidebarWidth : 0 },
+                minWidth: { xs: isSidebarOpen ? 300 : 0, sm: isSidebarOpen ? sidebarWidth : 0 },
                 height: '100vh',
-                borderRight: isSidebarOpen ? '1px solid' : 'none',
-                borderColor: 'divider',
+                borderRight: 'none',
                 display: 'flex',
                 flexDirection: 'column',
                 backgroundColor: 'background.paper',
                 overflow: 'hidden',
-                transition: 'all 0.3s ease',
+                transition: isResizing ? 'none' : 'width 0.3s ease, min-width 0.3s ease, transform 0.3s ease',
                 position: { xs: 'absolute', sm: 'relative' },
                 zIndex: { xs: 1300, sm: 'auto' },
                 boxShadow: { xs: isSidebarOpen ? 3 : 0, sm: 0 },
@@ -98,6 +144,27 @@ const Sidebar = ({
                 }
             }}
         >
+            {/* Resizer */}
+            <Box
+                onMouseDown={startResizing}
+                sx={{
+                    width: '4px',
+                    cursor: 'col-resize',
+                    position: 'absolute',
+                    top: 0,
+                    right: 0,
+                    bottom: 0,
+                    zIndex: 100,
+                    backgroundColor: isResizing ? 'primary.main' : 'transparent',
+                    borderRight: isSidebarOpen ? '1px solid' : 'none',
+                    borderColor: 'divider',
+                    '&:hover': {
+                        backgroundColor: 'primary.light',
+                    },
+                    display: { xs: 'none', sm: 'block' }
+                }}
+            />
+
             {/* Header with Space Name */}
             <Box sx={{ p: 2, pb: 1, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                 <Box
@@ -178,10 +245,55 @@ const Sidebar = ({
             <Divider sx={{ opacity: 0.6 }} />
 
             {/* Notes List Section */}
-            <Box sx={{ flexGrow: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column' }}>
-                <List sx={{ p: 1, pt: 0 }}>
-                    {filteredNotes.map((note) => (
-                        <ListItem key={note.id} disablePadding sx={{ mb: 0.5 }}>
+            <Box sx={{ flexGrow: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column', p: 1, pt: 0, width: '100%', boxSizing: 'border-box' }}>
+                <Masonry
+                    columns={Math.max(1, Math.floor(sidebarWidth / 200))}
+                    spacing={1}
+                >
+                    <AnimatePresence mode="popLayout" initial={false}>
+                    {filteredNotes.map((note) => {
+                        let firstImage = null;
+                        const imgMatches = [...note.content.matchAll(/<img([^>]+)>/gi)];
+                        for (const match of imgMatches) {
+                            const attrs = match[1];
+                            const srcMatch = attrs.match(/src=["'](.*?)["']/i);
+                            if (!srcMatch) continue;
+                            
+                            const src = srcMatch[1];
+                            const isSmallWidthAttr = /width=["']?(\d+)["']?/i.test(attrs) && parseInt(attrs.match(/width=["']?(\d+)["']?/i)![1], 10) < 100;
+                            const isSmallStyleWidth = /width:\s*(\d+)px/i.test(attrs) && parseInt(attrs.match(/width:\s*(\d+)px/i)![1], 10) < 100;
+                            const isIconClass = /class=["'][^"']*(emoji|icon)[^"']*["']/i.test(attrs);
+                            const isDataSvg = src.startsWith('data:image/svg');
+                            const isSvgFile = /\.svg$/i.test(src.split('?')[0]);
+                            const isEmojiUrl = /twemoji|emoji/i.test(src);
+                            
+                            if (isSmallWidthAttr || isSmallStyleWidth || isIconClass || isDataSvg || isSvgFile || isEmojiUrl) {
+                                continue;
+                            }
+                            
+                            firstImage = src;
+                            break;
+                        }
+
+
+                        return (
+                        <motion.div
+                            key={note.id}
+                            layout
+                            initial={{ opacity: 0, scale: 0.9 }}
+                            animate={{ opacity: 1, scale: 1 }}
+                            exit={{ opacity: 0, scale: 0.9, transition: { duration: 0.1 } }}
+                            transition={{
+                                type: "spring",
+                                stiffness: 500,
+                                damping: 30,
+                                mass: 1
+                            }}
+                        >
+                        <ListItem disablePadding sx={{ 
+                            display: 'block', 
+                            width: '100%'
+                        }}>
                             <ListItemButton
                                 selected={selectedNoteId === note.id}
                                 onClick={() => onNoteSelect(note.id)}
@@ -190,8 +302,9 @@ const Sidebar = ({
                                     flexDirection: 'column',
                                     alignItems: 'flex-start',
                                     p: 2,
+                                    overflow: 'hidden',
                                     border: '1px solid',
-                                    borderColor: selectedNoteId === note.id ? 'primary.light' : 'transparent',
+                                    borderColor: selectedNoteId === note.id ? 'primary.light' : 'divider',
                                     backgroundColor: selectedNoteId === note.id ? 'background.default' : 'transparent',
                                     '&.Mui-selected': {
                                         backgroundColor: 'background.default',
@@ -215,10 +328,36 @@ const Sidebar = ({
                                     },
                                 }}
                             >
+                                {firstImage && (
+                                    <Box
+                                        sx={{
+                                            mt: -2,
+                                            mx: -2,
+                                            mb: 1.5,
+                                            width: 'calc(100% + 32px)',
+                                            flexShrink: 0,
+                                            backgroundColor: 'divider',
+                                        }}
+                                    >
+                                        <img 
+                                            src={firstImage} 
+                                            alt="Note cover" 
+                                            onError={(e) => {
+                                                (e.target as HTMLImageElement).parentElement!.style.display = 'none';
+                                            }}
+                                            style={{
+                                                width: '100%',
+                                                maxHeight: 200,
+                                                minHeight: 100,
+                                                objectFit: 'cover',
+                                                display: 'block'
+                                            }} 
+                                        />
+                                    </Box>
+                                )}
                                 <Box sx={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', width: '100%', mb: 0.5 }}>
                                     <Typography
                                         variant="subtitle2"
-                                        noWrap
                                         sx={{
                                             fontWeight: 700,
                                             color: selectedNoteId === note.id ? 'primary.main' : 'text.primary',
@@ -257,7 +396,7 @@ const Sidebar = ({
                                         color="text.secondary"
                                         sx={{
                                             display: '-webkit-box',
-                                            WebkitLineClamp: 2,
+                                            WebkitLineClamp: 5,
                                             WebkitBoxOrient: 'vertical',
                                             overflow: 'hidden',
                                             lineHeight: 1.5,
@@ -266,7 +405,7 @@ const Sidebar = ({
                                             wordBreak: 'break-all'
                                         }}
                                     >
-                                        {note.content.replace(/<[^>]*>/g, '').substring(0, 100) || 'No additional content'}
+                                        {note.content.replace(/<[^>]*>/g, '').substring(0, 250) || 'No additional content'}
                                     </Typography>
                                 )}
                                 <Box sx={{ display: 'flex', flexDirection: 'column', width: '100%', gap: 0.5, position: 'relative' }}>
@@ -299,67 +438,105 @@ const Sidebar = ({
                                             })}
                                         </Box>
                                     )}
-                                    <Tooltip title="Delete Note">
+                                    <Tooltip title={noteToDelete === note.id ? "Click again to confirm" : "Delete Note"}>
                                         <IconButton
                                             className="delete-button"
                                             size="small"
                                             onClick={(e) => {
                                                 e.stopPropagation();
-                                                onDeleteNote(note.id);
+                                                if (noteToDelete === note.id) {
+                                                    onDeleteNote(note.id);
+                                                    setNoteToDelete(null);
+                                                } else {
+                                                    setNoteToDelete(note.id);
+                                                }
+                                            }}
+                                            onMouseLeave={() => {
+                                                if (noteToDelete === note.id) setNoteToDelete(null);
+                                            }}
+                                            onBlur={() => {
+                                                if (noteToDelete === note.id) setNoteToDelete(null);
                                             }}
                                             sx={{
                                                 position: 'absolute',
                                                 bottom: -4,
                                                 right: -8,
-                                                color: 'text.disabled',
+                                                color: noteToDelete === note.id ? 'error.main' : 'text.disabled',
                                                 '&:hover': { color: 'error.main' }
                                             }}
                                         >
-                                            <Trash2 size={14} />
+                                            {noteToDelete === note.id ? <Check size={14} /> : <Trash2 size={14} />}
                                         </IconButton>
                                     </Tooltip>
+                                    {!noteToDelete && (
+                                        <Tooltip title="Duplicate Note">
+                                            <IconButton
+                                                className="delete-button" // Reuse style to show on hover
+                                                size="small"
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    onDuplicateNote(note.id);
+                                                }}
+                                                sx={{
+                                                    position: 'absolute',
+                                                    bottom: -4,
+                                                    right: 18,
+                                                    color: 'text.disabled',
+                                                    '&:hover': { color: 'primary.main' }
+                                                }}
+                                            >
+                                                <Copy size={13} />
+                                            </IconButton>
+                                        </Tooltip>
+                                    )}
                                 </Box>
                             </ListItemButton>
                         </ListItem>
-                    ))}
-                    {error && (
-                        <Box sx={{ p: 4, textAlign: 'center' }}>
-                            <Typography variant="body2" color="error" sx={{ mb: 1, fontWeight: 700 }}>
-                                Error loading notes
-                            </Typography>
-                            <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>
-                                {error.includes('index') ? (
-                                    <>
-                                        This query requires a Firestore index. Check the browser console and click the link to create it.
-                                    </>
-                                ) : error}
-                            </Typography>
-                        </Box>
-                    )}
+                        </motion.div>
+                        );
+                    })}
+                    </AnimatePresence>
+                </Masonry>
 
-                    {filteredNotes.length === 0 && !loading && !error && (
-                        <Box sx={{ p: 4, textAlign: 'center' }}>
-                            {/* Empty as requested */}
-                        </Box>
-                    )}
+                {error && (
+                    <Box sx={{ p: 4, textAlign: 'center' }}>
+                        <Typography variant="body2" color="error" sx={{ mb: 1, fontWeight: 700 }}>
+                            Error loading notes
+                        </Typography>
+                        <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>
+                            {error.includes('index') ? (
+                                <>
+                                    This query requires a Firestore index. Check the browser console and click the link to create it.
+                                </>
+                            ) : error}
+                        </Typography>
+                    </Box>
+                )}
 
-                    {/* Lazy Load Sentinel */}
-                    {hasMore && searchQuery === '' && (
-                        <Box
-                            ref={observerRef}
-                            sx={{
-                                p: 2,
-                                display: 'flex',
-                                justifyContent: 'center',
-                                alignItems: 'center',
-                                minHeight: 60
-                            }}
-                        >
-                            {loading && <CircularProgress size={24} />}
-                        </Box>
-                    )}
-                </List>
+                {filteredNotes.length === 0 && !loading && !error && (
+                    <Box sx={{ p: 4, textAlign: 'center' }}>
+                        {/* Empty as requested */}
+                    </Box>
+                )}
+
+                {/* Lazy Load Sentinel */}
+                {hasMore && searchQuery === '' && (
+                    <Box
+                        ref={observerRef}
+                        sx={{
+                            p: 2,
+                            display: 'flex',
+                            justifyContent: 'center',
+                            alignItems: 'center',
+                            minHeight: 60,
+                            width: '100%'
+                        }}
+                    >
+                        {loading && <CircularProgress size={24} />}
+                    </Box>
+                )}
             </Box>
+
 
             <Divider />
 

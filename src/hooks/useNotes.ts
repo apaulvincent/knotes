@@ -169,6 +169,24 @@ export const useNotes = (userId: string | undefined) => {
     await updateDoc(catRef, { name });
   };
 
+  const duplicateNote = async (id: string) => {
+    if (!userId) throw new Error("User must be logged in to duplicate a note");
+    const noteRef = doc(db, 'notes', id);
+    const docSnap = await getDoc(noteRef);
+    if (docSnap.exists()) {
+      const data = docSnap.data();
+      const newNote = {
+        ...data,
+        title: `${data.title} (Copy)`,
+        createdAt: serverTimestamp(),
+        updatedAt: serverTimestamp(),
+      };
+      const newDocRef = await addDoc(collection(db, 'notes'), newNote);
+      return newDocRef.id;
+    }
+    return null;
+  };
+
   return {
     notes,
     categories,
@@ -182,6 +200,7 @@ export const useNotes = (userId: string | undefined) => {
     addNote,
     updateNote,
     deleteNote,
+    duplicateNote,
     addCategory,
     updateCategory
   };

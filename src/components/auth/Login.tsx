@@ -7,18 +7,21 @@ interface LoginProps {
     onGoogleLogin: () => Promise<any>;
     onEmailSignIn: (email: string, password: string) => Promise<any>;
     onEmailSignUp: (email: string, password: string) => Promise<any>;
+    onPasswordReset: (email: string) => Promise<any>;
 }
 
-const Login = ({ onGoogleLogin, onEmailSignIn, onEmailSignUp }: LoginProps) => {
-    const [mode, setMode] = useState<'options' | 'signin' | 'signup'>('options');
+const Login = ({ onGoogleLogin, onEmailSignIn, onEmailSignUp, onPasswordReset }: LoginProps) => {
+    const [mode, setMode] = useState<'options' | 'signin' | 'signup' | 'forgot'>('options');
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
+    const [message, setMessage] = useState<string | null>(null);
 
     const handleGoogleLogin = async () => {
         setLoading(true);
         setError(null);
+        setMessage(null);
         try {
             await onGoogleLogin();
         } catch (err: any) {
@@ -31,6 +34,7 @@ const Login = ({ onGoogleLogin, onEmailSignIn, onEmailSignUp }: LoginProps) => {
         e.preventDefault();
         setLoading(true);
         setError(null);
+        setMessage(null);
         try {
             if (mode === 'signin') {
                 await onEmailSignIn(email, password);
@@ -39,6 +43,23 @@ const Login = ({ onGoogleLogin, onEmailSignIn, onEmailSignUp }: LoginProps) => {
             }
         } catch (err: any) {
             setError(err.message || 'Authentication failed');
+            setLoading(false);
+        }
+    };
+
+    const handleResetPassword = async (e: React.FormEvent) => {
+        e.preventDefault();
+        setLoading(true);
+        setError(null);
+        setMessage(null);
+        try {
+            await onPasswordReset(email);
+            setMessage('Password reset email sent! Check your inbox.');
+            setLoading(false);
+            // Optionally switch back to signin after a delay
+            setTimeout(() => setMode('signin'), 5000);
+        } catch (err: any) {
+            setError(err.message || 'Failed to send reset email');
             setLoading(false);
         }
     };
@@ -161,16 +182,21 @@ const Login = ({ onGoogleLogin, onEmailSignIn, onEmailSignUp }: LoginProps) => {
 
                 <Box sx={{ textAlign: 'center' }}>
                     <Typography variant="h5" sx={{ fontWeight: 800, mb: 1, color: '#1e293b' }}>
-                        {mode === 'signin' ? 'Welcome Back' : 'Create Account'}
+                        {mode === 'signin' ? 'Welcome Back' : mode === 'forgot' ? 'Reset Password' : 'Create Account'}
                     </Typography>
                     <Typography variant="body2" color="text.secondary">
-                        {mode === 'signin' ? 'Enter your credentials to access your notes' : 'Join KNotes to start vaulting your thoughts'}
+                        {mode === 'signin' 
+                            ? 'Enter your credentials to access your notes' 
+                            : mode === 'forgot'
+                            ? 'Enter your email to receive a reset link'
+                            : 'Join KNotes to start vaulting your thoughts'}
                     </Typography>
                 </Box>
 
-                {error && <Alert severity="error" sx={{ width: '100%' }}>{error}</Alert>}
+                {error && <Alert severity="error" sx={{ width: '100%' }} onClose={() => setError(null)}>{error}</Alert>}
+                {message && <Alert severity="success" sx={{ width: '100%' }} onClose={() => setMessage(null)}>{message}</Alert>}
 
-                <Box component="form" onSubmit={handleEmailAuth} sx={{ display: 'flex', flexDirection: 'column', gap: 2.5 }}>
+                <Box component="form" onSubmit={mode === 'forgot' ? handleResetPassword : handleEmailAuth} sx={{ display: 'flex', flexDirection: 'column', gap: 2.5 }}>
                     <TextField
                         label="Email Address"
                         type="email"
@@ -180,15 +206,17 @@ const Login = ({ onGoogleLogin, onEmailSignIn, onEmailSignUp }: LoginProps) => {
                         onChange={(e) => setEmail(e.target.value)}
                         disabled={loading}
                     />
-                    <TextField
-                        label="Password"
-                        type="password"
-                        fullWidth
-                        required
-                        value={password}
-                        onChange={(e) => setPassword(e.target.value)}
-                        disabled={loading}
-                    />
+                    {mode !== 'forgot' && (
+                        <TextField
+                            label="Password"
+                            type="password"
+                            fullWidth
+                            required
+                            value={password}
+                            onChange={(e) => setPassword(e.target.value)}
+                            disabled={loading}
+                        />
+                    )}
                     <Button
                         type="submit"
                         variant="contained"
@@ -203,18 +231,36 @@ const Login = ({ onGoogleLogin, onEmailSignIn, onEmailSignUp }: LoginProps) => {
                             mt: 1
                         }}
                     >
-                        {mode === 'signin' ? 'Sign In' : 'Sign Up'}
+                        {mode === 'signin' ? 'Sign In' : mode === 'forgot' ? 'Send Reset Link' : 'Sign Up'}
                     </Button>
                 </Box>
 
-                <Box sx={{ textAlign: 'center', mt: 1 }}>
+                <Box sx={{ textAlign: 'center', mt: 1, display: 'flex', flexDirection: 'column', gap: 1 }}>
+                    {mode === 'signin' && (
+                        <Button
+                            variant="text"
+                            size="small"
+                            onClick={() => setMode('forgot')}
+                            sx={{ textTransform: 'none' }}
+                        >
+                            Forgot password?
+                        </Button>
+                    )}
+                    
                     <Button
                         variant="text"
                         size="small"
-                        onClick={() => setMode(mode === 'signin' ? 'signup' : 'signin')}
+                        onClick={() => {
+                            if (mode === 'forgot') setMode('signin');
+                            else setMode(mode === 'signin' ? 'signup' : 'signin');
+                        }}
                         sx={{ textTransform: 'none' }}
                     >
-                        {mode === 'signin' ? "Don't have an account? Sign up" : "Already have an account? Sign in"}
+                        {mode === 'signin' 
+                            ? "Don't have an account? Sign up" 
+                            : mode === 'forgot'
+                            ? "Back to Sign In"
+                            : "Already have an account? Sign in"}
                     </Button>
                 </Box>
             </Paper>

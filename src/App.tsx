@@ -1,13 +1,13 @@
 import {
-  Box,
-  Button,
-  CssBaseline,
-  Fab,
-  IconButton,
-  Paper, TextField,
-  Tooltip,
-  useMediaQuery,
-  useTheme
+    Box,
+    Button,
+    CssBaseline,
+    Fab,
+    IconButton,
+    Paper, TextField,
+    Tooltip,
+    useMediaQuery,
+    useTheme
 } from '@mui/material';
 import { ArrowUp, Loader2, Plus, Save, Trash2 } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
@@ -31,6 +31,7 @@ function App() {
     handleLogin: handleGoogleLogin,
     handleEmailSignUp,
     handleEmailSignIn,
+    handlePasswordReset,
     handleSendVerificationEmail,
     handleUpdateProfile,
     handleLogout
@@ -38,7 +39,7 @@ function App() {
   const {
     notes, categories, loading: notesLoading, error: notesError, hasMore, fetchNotes,
     loadMoreNotes, resetNoteLimit, getNote, addNote, updateNote,
-    deleteNote, addCategory, updateCategory
+    deleteNote, duplicateNote, addCategory, updateCategory
   } = useNotes(user?.uid);
 
   const { noteId, categoryId } = useParams<{ noteId?: string; categoryId?: string }>();
@@ -78,9 +79,15 @@ function App() {
   // Initial Check for MFA Verification
   useEffect(() => {
     if (user) {
+      // Automatically bypass MFA on localhost
+      if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+        setIsVerified(true);
+        return;
+      }
+
       const mfaVerifiedTime = localStorage.getItem(`mfa_verified_${user.uid}`);
       if (mfaVerifiedTime) {
-        const SESSION_DURATION = 2 * 24 * 60 * 60 * 1000;
+        const SESSION_DURATION = 14 * 24 * 60 * 60 * 1000; // 2 weeks in milliseconds
         const now = Date.now();
         if (now - parseInt(mfaVerifiedTime) < SESSION_DURATION) {
           setIsVerified(true);
@@ -226,6 +233,17 @@ function App() {
     }
   };
 
+  const handleDuplicateNote = async (id: string) => {
+    try {
+      const newId = await duplicateNote(id);
+      if (newId) {
+        navigate(`/notes/${newId}`);
+      }
+    } catch (err) {
+      console.error("Failed to duplicate note:", err);
+    }
+  };
+
   // Keyboard Shortcut: Ctrl + S to Save
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -255,6 +273,7 @@ function App() {
         onGoogleLogin={handleGoogleLogin}
         onEmailSignIn={handleEmailSignIn}
         onEmailSignUp={handleEmailSignUp}
+        onPasswordReset={handlePasswordReset}
       />
     );
   }
@@ -301,6 +320,7 @@ function App() {
           }
           deleteNote(id);
         }}
+        onDuplicateNote={handleDuplicateNote}
         user={user}
         onProfileClick={() => navigate('/account')}
         hasMore={hasMore}
@@ -308,14 +328,16 @@ function App() {
         loading={notesLoading}
         error={notesError}
       >
-        <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column', overflowY: 'auto', m: 0 }}>
+        <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column', overflow: 'hidden', m: 0 }}>
           {isAccountPage ? (
-            <AccountPage user={user} onLogout={handleLogout} onUpdateProfile={handleUpdateProfile} />
+            <Box sx={{ flexGrow: 1, overflowY: 'auto' }}>
+              <AccountPage user={user} onLogout={handleLogout} onUpdateProfile={handleUpdateProfile} />
+            </Box>
           ) : activeNote ? (
             <Paper
               elevation={0}
               sx={{
-                flexGrow: 1,
+                height: '100%',
                 display: 'flex',
                 flexDirection: 'column',
                 borderRadius: 1,
@@ -425,11 +447,13 @@ function App() {
               </Box>
             </Paper>
           ) : (
-            <CategoryDirectory 
-              categories={categories} 
-              onCategorySelect={(id) => handleCategorySelect(id || 'all')} 
-              onUpdateCategory={updateCategory}
-            />
+            <Box sx={{ flexGrow: 1, overflowY: 'auto' }}>
+              <CategoryDirectory 
+                categories={categories} 
+                onCategorySelect={(id) => handleCategorySelect(id || 'all')} 
+                onUpdateCategory={updateCategory}
+              />
+            </Box>
           )}
         </Box>
 
