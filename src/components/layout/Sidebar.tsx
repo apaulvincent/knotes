@@ -426,11 +426,16 @@ const Sidebar = ({
                                                         size="small"
                                                         color="primary"
                                                         variant="filled"
+                                                        onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            navigate(`/categories/${category.id}`);
+                                                        }}
                                                         sx={{
                                                             height: 16,
                                                             fontSize: '9px',
                                                             fontWeight: 700,
                                                             color: '#fff',
+                                                            cursor: 'pointer',
                                                             '& .MuiChip-label': { px: 1 }
                                                         }}
                                                     />

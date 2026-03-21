@@ -1,5 +1,5 @@
-import { Box, Grid, IconButton, List, ListItem, ListItemButton, ListItemText, Paper, TextField, Tooltip, Typography } from '@mui/material';
-import { Check, Edit2 } from 'lucide-react';
+import { Box, IconButton, TextField, Tooltip, Typography } from '@mui/material';
+import { Check, Edit2, X, Trash2 } from 'lucide-react';
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Category } from '../../types/note';
@@ -8,12 +8,14 @@ interface CategoryDirectoryProps {
     categories: Category[];
     onCategorySelect: (id: string | null) => void;
     onUpdateCategory: (id: string, name: string) => Promise<void>;
+    onDeleteCategory: (id: string) => Promise<void>;
 }
 
-const CategoryDirectory = ({ categories, onCategorySelect, onUpdateCategory }: CategoryDirectoryProps) => {
+const CategoryDirectory = ({ categories, onCategorySelect, onUpdateCategory, onDeleteCategory }: CategoryDirectoryProps) => {
     const navigate = useNavigate();
     const [editingId, setEditingId] = useState<string | null>(null);
     const [editingName, setEditingName] = useState('');
+    const [deleteId, setDeleteId] = useState<string | null>(null);
 
     // Group categories by first letter
     const grouped = categories.reduce((acc, cat) => {
@@ -53,105 +55,153 @@ const CategoryDirectory = ({ categories, onCategorySelect, onUpdateCategory }: C
         setEditingId(null);
     };
 
+    const cancelEditing = (e: React.MouseEvent) => {
+        e.stopPropagation();
+        setEditingId(null);
+    };
+
     return (
-        <Box sx={{ p: 4, width: '100%', mx: 'auto' }}>
+        <Box sx={{ p: { xs: 2, sm: 4 }, width: '100%', maxWidth: '1200px', mx: 'auto' }}>
             <Typography variant="h4" sx={{ fontWeight: 800, mb: 4, color: 'text.primary' }}>
                 Categories
             </Typography>
 
-            <Grid container spacing={4}>
+            <Box sx={{ display: 'flex', flexDirection: 'column', gap: { xs: 4, sm: 6 } }}>
                 {letters.map((letter) => (
-                    <Grid size={{ xs: 6, sm: 4, md: 3, lg: 2 }} key={letter}>
-                        <Paper
-                            elevation={0}
+                    <Box key={letter}>
+                        <Typography
+                            variant="h5"
                             sx={{
-                                p: 2,
-                                backgroundColor: 'transparent',
-                                border: 'none',
-                                boxShadow: 'none'
+                                fontWeight: 800,
+                                mb: 2,
+                                color: 'text.primary',
                             }}
                         >
-                            <Typography
-                                variant="h5"
-                                sx={{
-                                    fontWeight: 900,
-                                    color: 'primary.main',
-                                    mb: 1,
-                                    borderColor: 'primary.light',
-                                    display: 'inline-block',
-                                    minWidth: '40px'
-                                }}
-                            >
-                                {letter}
-                            </Typography>
-                            <List sx={{ pt: 0 }}>
-                                {grouped[letter].map((cat) => (
-                                    <ListItem key={cat.id} disablePadding sx={{ '&:hover .edit-icon': { opacity: 1 } }}>
-                                        {editingId === cat.id ? (
-                                            <Box sx={{ display: 'flex', alignItems: 'center', width: '100%', gap: 1, py: 0.5 }}>
-                                                <TextField
-                                                    size="small"
-                                                    value={editingName}
-                                                    onChange={(e) => setEditingName(e.target.value)}
-                                                    onKeyDown={(e) => e.key === 'Enter' && handleSave(e)}
-                                                    autoFocus
-                                                    sx={{ 
-                                                        '& .MuiInputBase-input': { py: 0.5, fontSize: '0.9rem' },
-                                                        flexGrow: 1
-                                                    }}
-                                                />
-                                                <IconButton size="small" onClick={handleSave} color="primary">
-                                                    <Check size={16} />
-                                                </IconButton>
-                                            </Box>
-                                        ) : (
-                                            <ListItemButton
-                                                onClick={() => handleSelect(cat.id)}
-                                                sx={{
-                                                    px: 0,
-                                                    py: 0.5,
-                                                    display: 'flex',
-                                                    justifyContent: 'space-between',
-                                                    '&:hover': { backgroundColor: 'transparent', '& .MuiListItemText-primary': { color: 'primary.main' } }
+                            {letter}
+                        </Typography>
+                        <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2 }}>
+                            {grouped[letter].map((cat) => (
+                                <Box key={cat.id} sx={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
+                                    {editingId === cat.id ? (
+                                        <Box 
+                                            sx={{ 
+                                                display: 'flex', 
+                                                alignItems: 'center', 
+                                                gap: 1, 
+                                                bgcolor: 'background.paper', 
+                                                borderRadius: '32px', 
+                                                px: 2, 
+                                                py: 0.5,
+                                                border: '1px solid',
+                                                borderColor: 'divider',
+                                            }}
+                                        >
+                                            <TextField
+                                                size="small"
+                                                value={editingName}
+                                                onChange={(e) => setEditingName(e.target.value)}
+                                                onKeyDown={(e) => {
+                                                    if (e.key === 'Enter') handleSave(e);
+                                                    if (e.key === 'Escape') setEditingId(null);
+                                                }}
+                                                autoFocus
+                                                variant="standard"
+                                                InputProps={{ disableUnderline: true }}
+                                                sx={{ 
+                                                    '& .MuiInputBase-input': { py: 0.5, fontSize: '0.95rem' },
+                                                    minWidth: '120px'
+                                                }}
+                                            />
+                                            <IconButton size="small" onClick={handleSave} color="primary" sx={{ p: 0.5 }}>
+                                                <Check size={16} />
+                                            </IconButton>
+                                            <IconButton size="small" onClick={cancelEditing} color="error" sx={{ p: 0.5 }}>
+                                                <X size={16} />
+                                            </IconButton>
+                                        </Box>
+                                    ) : (
+                                        <Box
+                                            sx={{
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                bgcolor: 'primary.main',
+                                                color: 'white',
+                                                borderRadius: '32px',
+                                                px: 3,
+                                                py: 1,
+                                                cursor: 'pointer',
+                                                transition: 'all 0.2s',
+                                                boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
+                                                '&:hover': {
+                                                    bgcolor: 'primary.dark',
+                                                    transform: 'translateY(-2px)',
+                                                    boxShadow: '0 4px 8px rgba(0,0,0,0.15)',
+                                                    '& .actions': { opacity: 1, maxWidth: '100px', ml: 1 }
+                                                }
+                                            }}
+                                            onClick={() => handleSelect(cat.id)}
+                                        >
+                                            <Typography variant="body1" sx={{ fontWeight: 600, color: 'inherit' }}>
+                                                {cat.name}
+                                            </Typography>
+                                            <Box 
+                                                className="actions"
+                                                sx={{ 
+                                                    display: 'flex', 
+                                                    alignItems: 'center', 
+                                                    gap: 0.5,
+                                                    opacity: 0,
+                                                    maxWidth: 0,
+                                                    overflow: 'hidden',
+                                                    transition: 'all 0.2s',
                                                 }}
                                             >
-                                                <ListItemText
-                                                    primary={cat.name}
-                                                    primaryTypographyProps={{
-                                                        variant: 'body1',
-                                                        fontWeight: 500,
-                                                        color: 'text.secondary',
-                                                        whiteSpace: 'nowrap',
-                                                        overflow: 'hidden',
-                                                        textOverflow: 'ellipsis'
-                                                    }}
-                                                    sx={{
-                                                        m: 0,
-                                                        mr: 1,
-                                                        '& .MuiListItemText-primary': {
-                                                            transition: 'color 0.2s'
-                                                        }
-                                                    }}
-                                                />
                                                 <Tooltip title="Edit Category">
                                                     <IconButton 
-                                                        className="edit-icon"
                                                         size="small" 
                                                         onClick={(e) => startEditing(e, cat)}
-                                                        sx={{ opacity: 0, transition: 'opacity 0.2s', p: 0.5 }}
+                                                        sx={{ p: 0.5, color: 'inherit', '&:hover': { bgcolor: 'rgba(255,255,255,0.2)' } }}
                                                     >
                                                         <Edit2 size={14} />
                                                     </IconButton>
                                                 </Tooltip>
-                                            </ListItemButton>
-                                        )}
-                                    </ListItem>
-                                ))}
-                            </List>
-                        </Paper>
-                    </Grid>
+                                                <Tooltip title={deleteId === cat.id ? "Click again to confirm" : "Delete Category"}>
+                                                    <IconButton 
+                                                        size="small" 
+                                                        onClick={(e) => { 
+                                                            e.stopPropagation(); 
+                                                            if (deleteId === cat.id) {
+                                                                onDeleteCategory(cat.id);
+                                                                setDeleteId(null);
+                                                            } else {
+                                                                setDeleteId(cat.id);
+                                                            }
+                                                        }}
+                                                        onMouseLeave={() => {
+                                                            if (deleteId === cat.id) setDeleteId(null);
+                                                        }}
+                                                        onBlur={() => {
+                                                            if (deleteId === cat.id) setDeleteId(null);
+                                                        }}
+                                                        sx={{ 
+                                                            p: 0.5, 
+                                                            color: deleteId === cat.id ? '#ff4d4d' : 'inherit', 
+                                                            '&:hover': { bgcolor: 'rgba(255,255,255,0.2)' } 
+                                                        }}
+                                                    >
+                                                        {deleteId === cat.id ? <Check size={14} /> : <Trash2 size={14} />}
+                                                    </IconButton>
+                                                </Tooltip>
+                                            </Box>
+                                        </Box>
+                                    )}
+                                </Box>
+                            ))}
+                        </Box>
+                    </Box>
                 ))}
-            </Grid>
+            </Box>
+            
             {categories.length === 0 && (
                 <Box sx={{ p: 4, textAlign: 'center', opacity: 0.5 }}>
                     <Typography variant="body1">No categories created yet.</Typography>

@@ -6,6 +6,7 @@ import {
     IconButton,
     Paper, TextField,
     Tooltip,
+    Typography,
     useMediaQuery,
     useTheme
 } from '@mui/material';
@@ -39,7 +40,7 @@ function App() {
   const {
     notes, categories, loading: notesLoading, error: notesError, hasMore, fetchNotes,
     loadMoreNotes, resetNoteLimit, getNote, addNote, updateNote,
-    deleteNote, duplicateNote, addCategory, updateCategory
+    deleteNote, duplicateNote, addCategory, updateCategory, deleteCategory
   } = useNotes(user?.uid);
 
   const { noteId, categoryId } = useParams<{ noteId?: string; categoryId?: string }>();
@@ -48,6 +49,7 @@ function App() {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const isAccountPage = location.pathname === '/account';
+  const isCategoriesPage = location.pathname === '/categories';
 
   const [categoryTab, setCategoryTab] = useState('all');
   const [activeNote, setActiveNote] = useState<Note | null>(null);
@@ -446,13 +448,33 @@ function App() {
                 />
               </Box>
             </Paper>
-          ) : (
+          ) : isCategoriesPage ? (
             <Box sx={{ flexGrow: 1, overflowY: 'auto' }}>
               <CategoryDirectory 
                 categories={categories} 
                 onCategorySelect={(id) => handleCategorySelect(id || 'all')} 
                 onUpdateCategory={updateCategory}
+                onDeleteCategory={deleteCategory}
               />
+            </Box>
+          ) : (
+            <Box sx={{ flexGrow: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', p: 4, textAlign: 'center' }}>
+                <Typography variant="h4" sx={{ fontWeight: 800, color: 'text.primary', mb: 2 }}>
+                    Welcome to KNotes
+                </Typography>
+                <Typography variant="body1" color="text.secondary" sx={{ mb: 4, maxWidth: 400 }}>
+                    Select a note from the sidebar to start reading, or create a brand new note to capture your thoughts.
+                </Typography>
+                <Button 
+                    variant="contained" 
+                    color="primary" 
+                    size="large"
+                    startIcon={<Plus size={20} />} 
+                    onClick={handleAddNote}
+                    sx={{ borderRadius: '8px', px: 4, py: 1.5, fontWeight: 600 }}
+                >
+                    Create New Note
+                </Button>
             </Box>
           )}
         </Box>

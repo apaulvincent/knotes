@@ -169,6 +169,11 @@ export const useNotes = (userId: string | undefined) => {
     await updateDoc(catRef, { name });
   };
 
+  const deleteCategory = async (id: string) => {
+    if (!userId) return;
+    await deleteDoc(doc(db, 'categories', id));
+  };
+
   const duplicateNote = async (id: string) => {
     if (!userId) throw new Error("User must be logged in to duplicate a note");
     const noteRef = doc(db, 'notes', id);
@@ -202,6 +207,7 @@ export const useNotes = (userId: string | undefined) => {
     deleteNote,
     duplicateNote,
     addCategory,
-    updateCategory
+    updateCategory,
+    deleteCategory
   };
 };
