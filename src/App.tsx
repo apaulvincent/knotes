@@ -360,7 +360,7 @@ function App() {
                   boxShadow: '0 2px 4px rgba(0,0,0,0.01)'
                 }}
               >
-                <Box sx={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 2 }}>
+                <Box sx={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 2, pl: { xs: '40px', sm: 0 } }}>
                   <NoteCategoryChips
                     categories={categories}
                     selectedCategoryIds={activeNote.categoryIds || []}

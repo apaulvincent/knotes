@@ -798,6 +798,8 @@ const NoteEditor = ({ content, onChange, editable = true }: NoteEditorProps) => 
                         fontSize: '1rem',
                         lineHeight: 1.6,
                         color: 'text.primary',
+                        wordBreak: 'break-word',
+                        overflowWrap: 'anywhere',
                         '& p': { margin: '0.5rem 0' },
                         '& pre': {
                             backgroundColor: '#050a14', // Ultra dark navy
