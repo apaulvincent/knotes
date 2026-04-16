@@ -11,6 +11,7 @@ import {
 } from 'firebase/firestore';
 import { useCallback, useEffect, useState } from 'react';
 import { db } from '../services/firebase';
+import { deleteFile } from '../services/storage';
 import { Category, Note } from '../types/note';
 
 export const useNotes = (userId: string | undefined) => {
@@ -149,7 +150,36 @@ export const useNotes = (userId: string | undefined) => {
 
   const deleteNote = async (id: string) => {
     if (!userId) return;
-    await deleteDoc(doc(db, 'notes', id));
+
+    try {
+      // 1. Get the note content to find images
+      const noteRef = doc(db, 'notes', id);
+      const docSnap = await getDoc(noteRef);
+
+      if (docSnap.exists()) {
+        const data = docSnap.data();
+        const content = data.content || '';
+
+        // 2. Extract Supabase image URLs
+        const docHtml = new DOMParser().parseFromString(content, 'text/html');
+        const imgs = Array.from(docHtml.querySelectorAll('img'));
+        const supabaseUrls = imgs
+          .map(img => img.src)
+          .filter(src => src.includes('supabase.co/storage/v1/object/public/'));
+
+        // 3. Delete each image from storage
+        if (supabaseUrls.length > 0) {
+          await Promise.all(supabaseUrls.map(url => deleteFile(url)));
+        }
+      }
+
+      // 4. Finally delete the note document
+      await deleteDoc(doc(db, 'notes', id));
+    } catch (err) {
+      console.error("Error deleting note and its assets:", err);
+      // Still try to delete the doc if something failed
+      await deleteDoc(doc(db, 'notes', id));
+    }
   };
 
   const addCategory = async (name: string) => {

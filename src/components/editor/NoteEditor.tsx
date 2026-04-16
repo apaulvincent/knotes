@@ -23,7 +23,6 @@ import {
     ChevronDown,
     Code,
     Heading1, Heading2, Heading3, Heading4, Heading5, Heading6,
-    Image as ImageIcon,
     Info,
     Italic,
     Link as LinkIcon,
@@ -41,9 +40,11 @@ import {
     X,
     MoreHorizontal,
     FileCode,
-    FileText
+    FileText,
+    Loader2
 } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
+import { uploadFile, deleteFile } from '../../services/storage';
 import { Callout } from './extensions/Callout';
 import { CodeBlockEnhanced } from './extensions/CodeBlockEnhanced';
 import { ResizableImage } from './extensions/ResizableImage';
@@ -65,6 +66,8 @@ const NoteEditor = ({ content, onChange, editable = true }: NoteEditorProps) => 
     const [showSecondLayer, setShowSecondLayer] = useState(false);
     const [isMarkdownMode, setIsMarkdownMode] = useState(false);
     const [markdownContent, setMarkdownContent] = useState('');
+    const [isUploading, setIsUploading] = useState(false);
+    const fileInputRef = useRef<HTMLInputElement>(null);
 
     useEffect(() => {
         if (isMobile) {
@@ -93,7 +96,7 @@ const NoteEditor = ({ content, onChange, editable = true }: NoteEditorProps) => 
                 codeBlock: false,
             }),
             ResizableImage.configure({
-                allowBase64: true,
+                allowBase64: false,
             }),
             Link.configure({
                 openOnClick: true,
@@ -127,6 +130,51 @@ const NoteEditor = ({ content, onChange, editable = true }: NoteEditorProps) => 
             onChange(editor.getHTML());
         },
         editable: editable,
+        editorProps: {
+            handlePaste: (view, event) => {
+                const items = Array.from(event.clipboardData?.items || []);
+                const imageItem = items.find(item => item.type.startsWith('image/'));
+                
+                if (imageItem) {
+                    const file = imageItem.getAsFile();
+                    if (file) {
+                        event.preventDefault();
+                        setIsUploading(true);
+                        uploadFile(file).then(url => {
+                            if (editor) {
+                                editor.chain().focus().setImage({ src: url }).run();
+                            }
+                        }).catch(err => {
+                            console.error("Paste upload failed:", err);
+                        }).finally(() => {
+                            setIsUploading(false);
+                        });
+                        return true;
+                    }
+                }
+                return false;
+            },
+            handleDrop: (view, event) => {
+                const files = Array.from(event.dataTransfer?.files || []);
+                const imageFile = files.find(file => file.type.startsWith('image/'));
+                
+                if (imageFile) {
+                    event.preventDefault();
+                    setIsUploading(true);
+                    uploadFile(imageFile).then(url => {
+                        if (editor) {
+                            editor.chain().focus().setImage({ src: url }).run();
+                        }
+                    }).catch(err => {
+                        console.error("Drop upload failed:", err);
+                    }).finally(() => {
+                        setIsUploading(false);
+                    });
+                    return true;
+                }
+                return false;
+            }
+        },
     });
 
     const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
@@ -214,6 +262,41 @@ const NoteEditor = ({ content, onChange, editable = true }: NoteEditorProps) => 
         }
     };
 
+    // Function to extract Supabase image URLs from HTML
+    const getSupabaseImageUrls = (html: string) => {
+        const doc = new DOMParser().parseFromString(html, 'text/html');
+        const imgs = Array.from(doc.querySelectorAll('img'));
+        return imgs
+            .map(img => img.src)
+            .filter(src => src.includes('supabase.co/storage/v1/object/public/'));
+    };
+
+    const previousImages = useRef<string[]>([]);
+
+    useEffect(() => {
+        if (editor) {
+            const currentImages = getSupabaseImageUrls(editor.getHTML());
+            
+            // Initial load: just store the current images
+            if (previousImages.current.length === 0 && content) {
+                previousImages.current = currentImages;
+                return;
+            }
+
+            // Find images that were in previousImages but NOT in currentImages
+            const removedImages = previousImages.current.filter(url => !currentImages.includes(url));
+            
+            if (removedImages.length > 0) {
+                removedImages.forEach(url => {
+                    console.log("Deleting orphaned image from storage:", url);
+                    deleteFile(url);
+                });
+            }
+
+            previousImages.current = currentImages;
+        }
+    }, [content, editor]);
+
     useEffect(() => {
         if (editor && content !== editor.getHTML() && !isMarkdownMode) {
             editor.commands.setContent(content);
@@ -239,12 +322,6 @@ const NoteEditor = ({ content, onChange, editable = true }: NoteEditorProps) => 
 
     if (!editor) return null;
 
-    const addImage = () => {
-        const url = window.prompt('URL');
-        if (url) {
-            editor.chain().focus().setImage({ src: url }).run();
-        }
-    };
 
     const setLink = () => {
         const previousUrl = editor.getAttributes('link').href;
@@ -542,11 +619,6 @@ const NoteEditor = ({ content, onChange, editable = true }: NoteEditorProps) => 
                                         <LinkIcon size={iconSize} />
                                     </IconButton>
                                 </Tooltip>
-                                <Tooltip title="Image">
-                                    <IconButton onClick={addImage}>
-                                        <ImageIcon size={iconSize} />
-                                    </IconButton>
-                                </Tooltip>
                             </ButtonGroup>
                         </>
                     )}
@@ -650,11 +722,6 @@ const NoteEditor = ({ content, onChange, editable = true }: NoteEditorProps) => 
                                 <Tooltip title="Link">
                                     <IconButton onClick={setLink} color={editor.isActive('link') ? 'primary' : 'default'}>
                                         <LinkIcon size={iconSize} />
-                                    </IconButton>
-                                </Tooltip>
-                                <Tooltip title="Image">
-                                    <IconButton onClick={addImage}>
-                                        <ImageIcon size={iconSize} />
                                     </IconButton>
                                 </Tooltip>
                             </ButtonGroup>
@@ -938,6 +1005,20 @@ const NoteEditor = ({ content, onChange, editable = true }: NoteEditorProps) => 
                 }}
             >
                 <EditorContent editor={editor} />
+                {isUploading && (
+                    <Box sx={{
+                        position: 'absolute',
+                        top: 0, left: 0, right: 0, bottom: 0,
+                        bgcolor: 'rgba(255,255,255,0.4)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        zIndex: 10,
+                        backdropFilter: 'blur(2px)'
+                    }}>
+                        <Loader2 className="animate-spin" color={theme.palette.primary.main} size={40} />
+                    </Box>
+                )}
             </Box>
             )}
 
