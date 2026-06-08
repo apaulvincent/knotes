@@ -2,9 +2,9 @@ import ClassOutlinedIcon from '@mui/icons-material/ClassOutlined';
 import { Avatar, Box, Chip, CircularProgress, Divider, IconButton, InputAdornment, ListItem, ListItemButton, TextField, Tooltip, Typography } from '@mui/material';
 import { format } from 'date-fns';
 import { User } from 'firebase/auth';
-import { PanelLeftClose, Pin, Search, Trash2, Check, Copy } from 'lucide-react';
+import { PanelLeftClose, Pin, Search, Trash2, Check, Copy, Archive, ArchiveRestore } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { useSettings } from '../../contexts/SettingsContext';
 import { Category, Note } from '../../types/note';
 import Logo from '../common/Logo';
@@ -20,6 +20,7 @@ interface SidebarProps {
     onTogglePin: (id: string, currentStatus: boolean) => void;
     onDeleteNote: (id: string) => void;
     onDuplicateNote: (id: string) => void;
+    onToggleArchive: (id: string, currentStatus: boolean) => void;
     user: User | null;
     onProfileClick: () => void;
     hasMore: boolean;
@@ -38,6 +39,7 @@ const Sidebar = ({
     onTogglePin,
     onDeleteNote,
     onDuplicateNote,
+    onToggleArchive,
     user,
     onProfileClick,
     hasMore,
@@ -48,6 +50,7 @@ const Sidebar = ({
     onToggleSidebar
 }: SidebarProps) => {
     const navigate = useNavigate();
+    const location = useLocation();
     const { sidebarSettings, updateSidebarSettings } = useSettings();
     const [searchQuery, setSearchQuery] = useState('');
     const observerRef = useRef<HTMLDivElement | null>(null);
@@ -198,6 +201,15 @@ const Sidebar = ({
                             sx={{ color: 'text.secondary', opacity: isSidebarOpen ? 1 : 0 }}
                         >
                             <ClassOutlinedIcon sx={{ fontSize: 18 }} />
+                        </IconButton>
+                    </Tooltip>
+                    <Tooltip title={location.pathname === '/archive' ? "Active Notes" : "Archive"}>
+                        <IconButton
+                            size="small"
+                            onClick={() => navigate(location.pathname === '/archive' ? '/notes' : '/archive')}
+                            sx={{ color: location.pathname === '/archive' ? 'primary.main' : 'text.secondary', opacity: isSidebarOpen ? 1 : 0 }}
+                        >
+                            <Archive size={18} />
                         </IconButton>
                     </Tooltip>
                     <Tooltip title="Close Sidebar">
@@ -414,8 +426,95 @@ const Sidebar = ({
                                             {note.updatedAt ? format(note.updatedAt.toDate(), 'MMM dd') : 'Just now'}
                                         </Typography>
                                     )}
-                                    {sidebarSettings.showCategories && (
-                                        <Box sx={{ display: 'flex', gap: 0.5, flexWrap: 'wrap', pr: 4 }}>
+                                    <Box
+                                        className="delete-button"
+                                        sx={{
+                                            position: 'absolute',
+                                            top: sidebarSettings.showDate ? 16 : 0,
+                                            right: -8,
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            gap: 0.5,
+                                            zIndex: 10
+                                        }}
+                                    >
+                                        {noteToDelete === note.id ? (
+                                            <Tooltip title="Click again to confirm">
+                                                <IconButton
+                                                    size="small"
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        onDeleteNote(note.id);
+                                                        setNoteToDelete(null);
+                                                    }}
+                                                    onMouseLeave={() => setNoteToDelete(null)}
+                                                    onBlur={() => setNoteToDelete(null)}
+                                                    sx={{
+                                                        color: 'error.main',
+                                                        '&:hover': { color: 'error.dark' }
+                                                    }}
+                                                >
+                                                    <Check size={14} />
+                                                </IconButton>
+                                            </Tooltip>
+                                        ) : (
+                                            <>
+                                                <Tooltip title={note.isArchived ? "Unarchive Note" : "Archive Note"}>
+                                                    <IconButton
+                                                        size="small"
+                                                        onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            onToggleArchive(note.id, !!note.isArchived);
+                                                        }}
+                                                        sx={{
+                                                            color: 'text.disabled',
+                                                            '&:hover': { color: 'primary.main' }
+                                                        }}
+                                                    >
+                                                        {note.isArchived ? <ArchiveRestore size={13} /> : <Archive size={13} />}
+                                                    </IconButton>
+                                                </Tooltip>
+                                                <Tooltip title="Duplicate Note">
+                                                    <IconButton
+                                                        size="small"
+                                                        onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            onDuplicateNote(note.id);
+                                                        }}
+                                                        sx={{
+                                                            color: 'text.disabled',
+                                                            '&:hover': { color: 'primary.main' }
+                                                        }}
+                                                    >
+                                                        <Copy size={13} />
+                                                    </IconButton>
+                                                </Tooltip>
+                                                <Tooltip title="Delete Note">
+                                                    <IconButton
+                                                        size="small"
+                                                        onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            setNoteToDelete(note.id);
+                                                        }}
+                                                        sx={{
+                                                            color: 'text.disabled',
+                                                            '&:hover': { color: 'error.main' }
+                                                        }}
+                                                    >
+                                                        <Trash2 size={14} />
+                                                    </IconButton>
+                                                </Tooltip>
+                                            </>
+                                        )}
+                                    </Box>
+                                    {sidebarSettings.showCategories && note.categoryIds?.some(catId => categories.some(c => c.id === catId)) && (
+                                        <Box sx={{ 
+                                            display: 'flex', 
+                                            gap: 0.5, 
+                                            flexWrap: 'wrap', 
+                                            pr: 4,
+                                            pt: 3.5 // Pushes pills down to sit cleanly below the absolute controls box
+                                        }}>
                                             {note.categoryIds?.map(catId => {
                                                 const category = categories.find(c => c.id === catId);
                                                 if (!category) return null;
@@ -442,57 +541,6 @@ const Sidebar = ({
                                                 );
                                             })}
                                         </Box>
-                                    )}
-                                    <Tooltip title={noteToDelete === note.id ? "Click again to confirm" : "Delete Note"}>
-                                        <IconButton
-                                            className="delete-button"
-                                            size="small"
-                                            onClick={(e) => {
-                                                e.stopPropagation();
-                                                if (noteToDelete === note.id) {
-                                                    onDeleteNote(note.id);
-                                                    setNoteToDelete(null);
-                                                } else {
-                                                    setNoteToDelete(note.id);
-                                                }
-                                            }}
-                                            onMouseLeave={() => {
-                                                if (noteToDelete === note.id) setNoteToDelete(null);
-                                            }}
-                                            onBlur={() => {
-                                                if (noteToDelete === note.id) setNoteToDelete(null);
-                                            }}
-                                            sx={{
-                                                position: 'absolute',
-                                                bottom: -4,
-                                                right: -8,
-                                                color: noteToDelete === note.id ? 'error.main' : 'text.disabled',
-                                                '&:hover': { color: 'error.main' }
-                                            }}
-                                        >
-                                            {noteToDelete === note.id ? <Check size={14} /> : <Trash2 size={14} />}
-                                        </IconButton>
-                                    </Tooltip>
-                                    {!noteToDelete && (
-                                        <Tooltip title="Duplicate Note">
-                                            <IconButton
-                                                className="delete-button" // Reuse style to show on hover
-                                                size="small"
-                                                onClick={(e) => {
-                                                    e.stopPropagation();
-                                                    onDuplicateNote(note.id);
-                                                }}
-                                                sx={{
-                                                    position: 'absolute',
-                                                    bottom: -4,
-                                                    right: 18,
-                                                    color: 'text.disabled',
-                                                    '&:hover': { color: 'primary.main' }
-                                                }}
-                                            >
-                                                <Copy size={13} />
-                                            </IconButton>
-                                        </Tooltip>
                                     )}
                                 </Box>
                             </ListItemButton>

@@ -51,7 +51,7 @@ export const useNotes = (userId: string | undefined) => {
     setLoading(true);
     let q;
 
-    if (categoryId === 'all') {
+    if (categoryId === 'all' || categoryId === 'archived') {
       q = query(
         collection(db, 'notes'),
         where('userId', '==', userId),

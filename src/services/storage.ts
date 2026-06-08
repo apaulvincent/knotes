@@ -32,7 +32,7 @@ export const uploadFile = async (file: File, bucket: string = "notes"): Promise<
   const fileName = `images/${timestamp}-${Math.random().toString(36).substring(7)}.${extension}`;
   
   try {
-    const { data, error } = await supabase.storage
+    const { error } = await supabase.storage
       .from(bucket)
       .upload(fileName, fileToUpload, {
         cacheControl: '3600',

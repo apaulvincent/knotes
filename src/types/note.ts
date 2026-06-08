@@ -13,6 +13,7 @@ export interface Note {
     categoryIds: string[];
     tags: string[];
     isPinned: boolean;
+    isArchived?: boolean;
     userId: string; // New: Link to user
     createdAt: any;
     updatedAt: any;

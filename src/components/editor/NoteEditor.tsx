@@ -40,8 +40,7 @@ import {
     X,
     MoreHorizontal,
     FileCode,
-    FileText,
-    Loader2
+    FileText
 } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { uploadFile, deleteFile } from '../../services/storage';
@@ -66,8 +65,6 @@ const NoteEditor = ({ content, onChange, editable = true }: NoteEditorProps) => 
     const [showSecondLayer, setShowSecondLayer] = useState(false);
     const [isMarkdownMode, setIsMarkdownMode] = useState(false);
     const [markdownContent, setMarkdownContent] = useState('');
-    const [isUploading, setIsUploading] = useState(false);
-    const fileInputRef = useRef<HTMLInputElement>(null);
 
     useEffect(() => {
         if (isMobile) {
@@ -131,7 +128,7 @@ const NoteEditor = ({ content, onChange, editable = true }: NoteEditorProps) => 
         },
         editable: editable,
         editorProps: {
-            handlePaste: (view, event) => {
+            handlePaste: (_view, event) => {
                 const items = Array.from(event.clipboardData?.items || []);
                 const imageItem = items.find(item => item.type.startsWith('image/'));
                 
@@ -139,36 +136,86 @@ const NoteEditor = ({ content, onChange, editable = true }: NoteEditorProps) => 
                     const file = imageItem.getAsFile();
                     if (file) {
                         event.preventDefault();
-                        setIsUploading(true);
+                        const svgString = `<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100" viewBox="0 0 100 100"><circle cx="50" cy="50" r="40" stroke="#6366f1" stroke-width="8" fill="none" stroke-dasharray="180 50"><animateTransform attributeName="transform" type="rotate" from="0 50 50" to="360 50 50" dur="1s" repeatCount="indefinite"/></circle></svg>`;
+                        const base64Svg = `data:image/svg+xml;base64,${btoa(svgString)}`;
+                        const placeholderUrl = `${base64Svg}#upload_${Math.random().toString(36).substring(2, 9)}`;
+
+                        if (editor) {
+                            editor.chain().focus().setImage({ src: placeholderUrl }).run();
+                        }
+
                         uploadFile(file).then(url => {
                             if (editor) {
-                                editor.chain().focus().setImage({ src: url }).run();
+                                // Find and replace the placeholder node
+                                editor.state.doc.descendants((node, pos) => {
+                                    if (node.type.name === 'image' && node.attrs.src === placeholderUrl) {
+                                        const transaction = editor.state.tr.setNodeMarkup(pos, undefined, {
+                                            ...node.attrs,
+                                            src: url
+                                        });
+                                        editor.view.dispatch(transaction);
+                                        return false; // Stop traversing
+                                    }
+                                });
                             }
                         }).catch(err => {
                             console.error("Paste upload failed:", err);
-                        }).finally(() => {
-                            setIsUploading(false);
+                            if (editor) {
+                                // Remove placeholder on failure
+                                editor.state.doc.descendants((node, pos) => {
+                                    if (node.type.name === 'image' && node.attrs.src === placeholderUrl) {
+                                        const transaction = editor.state.tr.delete(pos, pos + node.nodeSize);
+                                        editor.view.dispatch(transaction);
+                                        return false; // Stop traversing
+                                    }
+                                });
+                            }
                         });
                         return true;
                     }
                 }
                 return false;
             },
-            handleDrop: (view, event) => {
+            handleDrop: (_view, event) => {
                 const files = Array.from(event.dataTransfer?.files || []);
                 const imageFile = files.find(file => file.type.startsWith('image/'));
                 
                 if (imageFile) {
                     event.preventDefault();
-                    setIsUploading(true);
+                    const svgString = `<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100" viewBox="0 0 100 100"><circle cx="50" cy="50" r="40" stroke="#6366f1" stroke-width="8" fill="none" stroke-dasharray="180 50"><animateTransform attributeName="transform" type="rotate" from="0 50 50" to="360 50 50" dur="1s" repeatCount="indefinite"/></circle></svg>`;
+                    const base64Svg = `data:image/svg+xml;base64,${btoa(svgString)}`;
+                    const placeholderUrl = `${base64Svg}#upload_${Math.random().toString(36).substring(2, 9)}`;
+
+                    if (editor) {
+                        editor.chain().focus().setImage({ src: placeholderUrl }).run();
+                    }
+
                     uploadFile(imageFile).then(url => {
                         if (editor) {
-                            editor.chain().focus().setImage({ src: url }).run();
+                            // Find and replace the placeholder node
+                            editor.state.doc.descendants((node, pos) => {
+                                if (node.type.name === 'image' && node.attrs.src === placeholderUrl) {
+                                    const transaction = editor.state.tr.setNodeMarkup(pos, undefined, {
+                                        ...node.attrs,
+                                        src: url
+                                    });
+                                    editor.view.dispatch(transaction);
+                                    return false; // Stop traversing
+                                }
+                            });
                         }
                     }).catch(err => {
                         console.error("Drop upload failed:", err);
-                    }).finally(() => {
-                        setIsUploading(false);
+                        if (editor) {
+                            // Remove placeholder on failure
+                            editor.state.doc.descendants((node, pos) => {
+                                if (node.type.name === 'image' && node.attrs.src === placeholderUrl) {
+                                    const transaction = editor.state.tr.delete(pos, pos + node.nodeSize);
+                                    editor.view.dispatch(transaction);
+                                    return false; // Stop traversing
+                                }
+                            });
+                        }
                     });
                     return true;
                 }
@@ -1005,20 +1052,6 @@ const NoteEditor = ({ content, onChange, editable = true }: NoteEditorProps) => 
                 }}
             >
                 <EditorContent editor={editor} />
-                {isUploading && (
-                    <Box sx={{
-                        position: 'absolute',
-                        top: 0, left: 0, right: 0, bottom: 0,
-                        bgcolor: 'rgba(255,255,255,0.4)',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        zIndex: 10,
-                        backdropFilter: 'blur(2px)'
-                    }}>
-                        <Loader2 className="animate-spin" color={theme.palette.primary.main} size={40} />
-                    </Box>
-                )}
             </Box>
             )}
 

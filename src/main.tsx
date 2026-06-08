@@ -19,6 +19,7 @@ createRoot(document.getElementById('root')!).render(
             <Route path="/categories" element={<App />} />
             <Route path="/categories/:categoryId" element={<App />} />
             <Route path="/account" element={<App />} />
+            <Route path="/archive" element={<App />} />
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
         </BrowserRouter>

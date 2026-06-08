@@ -52,6 +52,13 @@ function App() {
   const isCategoriesPage = location.pathname === '/categories';
 
   const [categoryTab, setCategoryTab] = useState('all');
+  const filteredNotes = notes.filter(note => {
+    if (categoryTab === 'archived') {
+      return note.isArchived === true;
+    } else {
+      return !note.isArchived;
+    }
+  });
   const [activeNote, setActiveNote] = useState<Note | null>(null);
   const [isSaving, setIsSaving] = useState(false);
   const [isVerified, setIsVerified] = useState(false);
@@ -70,13 +77,20 @@ function App() {
 
   // Sync category state with URL
   useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const categoryParam = params.get('category');
+
     if (categoryId) {
       setCategoryTab(categoryId);
+    } else if (categoryParam) {
+      setCategoryTab(categoryParam);
+    } else if (location.pathname === '/archive') {
+      setCategoryTab('archived');
     } else if (location.pathname === '/' || location.pathname === '/notes') {
       setCategoryTab('all');
     }
     // Note: if viewing a note directly, we keep the last selected category in the sidebar
-  }, [categoryId, location.pathname]);
+  }, [categoryId, location.pathname, location.search]);
 
   // Initial Check for MFA Verification
   useEffect(() => {
@@ -221,17 +235,34 @@ function App() {
   const handleDeleteNote = async () => {
     if (activeNote) {
       const idToDelete = activeNote.id;
-      const otherNotes = notes.filter(n => n.id !== idToDelete);
+      const otherNotes = filteredNotes.filter(n => n.id !== idToDelete);
 
       if (otherNotes.length > 0) {
         // Select the first available note
-        navigate(`/notes/${otherNotes[0].id}`);
+        navigate(`/notes/${otherNotes[0].id}?category=${categoryTab}`);
       } else {
         setActiveNote(null);
-        navigate(categoryTab === 'all' ? '/' : `/categories/${categoryTab}`);
+        navigate(categoryTab === 'all' ? '/' : (categoryTab === 'archived' ? '/archive' : `/categories/${categoryTab}`));
       }
 
       await deleteNote(idToDelete);
+    }
+  };
+
+  const handleToggleArchive = async (id: string, currentStatus: boolean) => {
+    try {
+      if (noteId === id) {
+        const otherNotes = filteredNotes.filter(n => n.id !== id);
+        if (otherNotes.length > 0) {
+          navigate(`/notes/${otherNotes[0].id}?category=${categoryTab}`);
+        } else {
+          setActiveNote(null);
+          navigate(categoryTab === 'all' ? '/' : (categoryTab === 'archived' ? '/archive' : `/categories/${categoryTab}`));
+        }
+      }
+      await updateNote(id, { isArchived: !currentStatus });
+    } catch (err) {
+      console.error("Failed to toggle archive:", err);
     }
   };
 
@@ -239,7 +270,7 @@ function App() {
     try {
       const newId = await duplicateNote(id);
       if (newId) {
-        navigate(`/notes/${newId}`);
+        navigate(`/notes/${newId}?category=${categoryTab}`);
       }
     } catch (err) {
       console.error("Failed to duplicate note:", err);
@@ -306,23 +337,24 @@ function App() {
     <>
       <CssBaseline />
       <Layout
-        notes={notes}
+        notes={filteredNotes}
         categories={categories}
         selectedNoteId={noteId || null}
         onNoteSelect={handleNoteSelect}
         onTogglePin={handleTogglePin}
         onDeleteNote={(id: string) => {
           if (noteId === id) {
-            const otherNotes = notes.filter(n => n.id !== id);
+            const otherNotes = filteredNotes.filter(n => n.id !== id);
             if (otherNotes.length > 0) {
-              navigate(`/notes/${otherNotes[0].id}`);
+              navigate(`/notes/${otherNotes[0].id}?category=${categoryTab}`);
             } else {
-              navigate(categoryTab === 'all' ? '/' : `/categories/${categoryTab}`);
+              navigate(categoryTab === 'all' ? '/' : (categoryTab === 'archived' ? '/archive' : `/categories/${categoryTab}`));
             }
           }
           deleteNote(id);
         }}
         onDuplicateNote={handleDuplicateNote}
+        onToggleArchive={handleToggleArchive}
         user={user}
         onProfileClick={() => navigate('/account')}
         hasMore={hasMore}
