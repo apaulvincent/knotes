@@ -420,7 +420,14 @@ const Sidebar = ({
                                         {note.content.replace(/<[^>]*>/g, '').substring(0, 250) || 'No additional content'}
                                     </Typography>
                                 )}
-                                <Box sx={{ display: 'flex', flexDirection: 'column', width: '100%', gap: 0.5, position: 'relative' }}>
+                                <Box sx={{ 
+                                    display: 'flex', 
+                                    flexDirection: 'column', 
+                                    width: '100%', 
+                                    gap: 0.5, 
+                                    position: 'relative',
+                                    minHeight: sidebarSettings.showDate ? 44 : 28
+                                }}>
                                     {sidebarSettings.showDate && (
                                         <Typography variant="caption" sx={{ color: 'text.disabled', fontWeight: 600, fontSize: '10px' }}>
                                             {note.updatedAt ? format(note.updatedAt.toDate(), 'MMM dd') : 'Just now'}
