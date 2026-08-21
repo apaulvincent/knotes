@@ -13,40 +13,42 @@ import { Underline } from '@tiptap/extension-underline';
 import { EditorContent, useEditor } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import { common, createLowlight } from 'lowlight';
-import { marked } from 'marked';
-import TurndownService from 'turndown';
 import {
-    AlertCircle,
-    AlertTriangle,
-    Bold,
-    CheckCircle,
-    ChevronDown,
-    Code,
-    Heading1, Heading2, Heading3, Heading4, Heading5, Heading6,
-    Info,
-    Italic,
-    Link as LinkIcon,
-    List, ListOrdered,
-    ListTodo,
-    Minus,
-    Palette,
-    Quote as QuoteIcon,
-    Redo,
-    Strikethrough,
-    Table as TableIcon,
-    Type,
-    Underline as UnderlineIcon,
-    Undo,
-    X,
-    MoreHorizontal,
-    FileCode,
-    FileText
+  AlertCircle,
+  AlertTriangle,
+  Bold,
+  CheckCircle,
+  ChevronDown,
+  Code,
+  FileCode,
+  FileText,
+  Heading1, Heading2, Heading3, Heading4, Heading5, Heading6,
+  Info,
+  Italic,
+  Link as LinkIcon,
+  List, ListOrdered,
+  ListTodo,
+  Minus,
+  MoreHorizontal,
+  Palette,
+  Quote as QuoteIcon,
+  Redo,
+  Strikethrough,
+  Table as TableIcon,
+  Type,
+  Underline as UnderlineIcon,
+  Undo,
+  X,
+  GripVertical
 } from 'lucide-react';
+import { marked } from 'marked';
 import { useEffect, useRef, useState } from 'react';
-import { uploadFile, deleteFile } from '../../services/storage';
+import TurndownService from 'turndown';
+import { deleteFile, uploadFile } from '../../services/storage';
 import { Callout } from './extensions/Callout';
 import { CodeBlockEnhanced } from './extensions/CodeBlockEnhanced';
 import { ResizableImage } from './extensions/ResizableImage';
+import { BlockMarker } from './extensions/BlockMarker';
 
 const lowlight = createLowlight(common);
 
@@ -65,6 +67,7 @@ const NoteEditor = ({ content, onChange, editable = true }: NoteEditorProps) => 
     const [showSecondLayer, setShowSecondLayer] = useState(false);
     const [isMarkdownMode, setIsMarkdownMode] = useState(false);
     const [markdownContent, setMarkdownContent] = useState('');
+    const [hoveredNode, setHoveredNode] = useState<{ top: number, pos: number, height: number } | null>(null);
 
     useEffect(() => {
         if (isMobile) {
@@ -121,6 +124,7 @@ const NoteEditor = ({ content, onChange, editable = true }: NoteEditorProps) => 
                 nested: true,
             }),
             Callout,
+            BlockMarker,
         ],
         content: content,
         onUpdate: ({ editor }) => {
@@ -901,7 +905,46 @@ const NoteEditor = ({ content, onChange, editable = true }: NoteEditorProps) => 
                 </Box>
             ) : (
                 <Box
+                    onMouseMove={(e) => {
+                        if (!editor || isMarkdownMode) return;
+                        const rect = e.currentTarget.getBoundingClientRect();
+                        const pos = editor.view.posAtCoords({ left: e.clientX, top: e.clientY });
+                        if (pos) {
+                            let nodePos = pos.pos;
+                            let node = editor.state.doc.nodeAt(nodePos);
+                            
+                            // Find the closest block node that we are actually hovering over
+                            const $pos = editor.state.doc.resolve(nodePos);
+                            // We want to find the innermost block node that can accept markers
+                            let targetDepth = $pos.depth;
+                            while (targetDepth > 0) {
+                                const tempNode = $pos.node(targetDepth);
+                                if (tempNode && tempNode.isBlock) {
+                                    node = tempNode;
+                                    nodePos = $pos.before(targetDepth);
+                                    break;
+                                }
+                                targetDepth--;
+                            }
+
+                            if (node && node.isBlock) {
+                                const dom = editor.view.nodeDOM(nodePos) as HTMLElement;
+                                if (dom && dom.nodeType === 1) { 
+                                    const domRect = dom.getBoundingClientRect();
+                                    setHoveredNode({ 
+                                        top: domRect.top - rect.top, 
+                                        pos: nodePos, 
+                                        height: domRect.height
+                                    });
+                                    return;
+                                }
+                            }
+                        }
+                        setHoveredNode(null);
+                    }}
+                    onMouseLeave={() => setHoveredNode(null)}
                     sx={{
+                        position: 'relative',
                         flexGrow: 1,
                         px: { xs: 1, sm: 3 },
                         pb: { xs: 1, sm: 4 },
@@ -928,8 +971,8 @@ const NoteEditor = ({ content, onChange, editable = true }: NoteEditorProps) => 
                             margin: '1.5rem 0',
                         },
                         '& code': {
-                            backgroundColor: 'action.selected',
-                            color: 'primary.main',
+                            backgroundColor: theme.palette.mode === 'dark' ? 'rgba(0, 0, 0, 0.3)' : 'rgba(0, 0, 0, 0.05)',
+                            color: 'primary.darker',
                             padding: '0.2rem 0.4rem',
                             borderRadius: '4px',
                             fontSize: '0.9em',
@@ -968,10 +1011,10 @@ const NoteEditor = ({ content, onChange, editable = true }: NoteEditorProps) => 
                             borderLeft: '4px solid',
                             borderColor: 'divider',
                             padding: '0.5rem 1rem',
-                            backgroundColor: 'action.hover',
+                            backgroundColor: theme.palette.mode === 'dark' ? 'rgba(0, 0, 0, 0.3)' : 'rgba(0, 0, 0, 0.05)',
                             fontStyle: 'italic',
                             margin: '1rem 0',
-                            color: 'text.secondary',
+                            color: 'text.primary',
                         },
                         '& hr': {
                             border: 'none',
@@ -1042,6 +1085,24 @@ const NoteEditor = ({ content, onChange, editable = true }: NoteEditorProps) => 
                                 borderLeftColor: '#ef4444',
                             },
                         }
+                    },
+                    '& .marked-block': {
+                        position: 'relative',
+                    },
+                    '& .marked-block::before': {
+                        content: '""',
+                        position: 'absolute',
+                        left: '-24px',
+                        top: '4px',
+                        width: '16px',
+                        height: '16px',
+                        backgroundColor: '#ef4444',
+                        WebkitMaskImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='black' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m19 21-7-4-7 4V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v16z'/%3E%3C/svg%3E")`,
+                        WebkitMaskRepeat: 'no-repeat',
+                        WebkitMaskSize: 'contain',
+                        maskImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='black' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m19 21-7-4-7 4V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v16z'/%3E%3C/svg%3E")`,
+                        maskRepeat: 'no-repeat',
+                        maskSize: 'contain',
                     }
                 }}
                 onDoubleClick={(e) => {
@@ -1052,6 +1113,28 @@ const NoteEditor = ({ content, onChange, editable = true }: NoteEditorProps) => 
                 }}
             >
                 <EditorContent editor={editor} />
+                {hoveredNode && (
+                    <IconButton 
+                        size="small"
+                        sx={{
+                            position: 'absolute',
+                            left: { xs: 4, sm: 8 },
+                            top: hoveredNode.top,
+                            zIndex: 10,
+                            backgroundColor: 'background.paper',
+                            opacity: 0.5,
+                            '&:hover': { opacity: 1 }
+                        }}
+                        onClick={() => {
+                            const node = editor.state.doc.nodeAt(hoveredNode.pos);
+                            if (node) {
+                                editor.chain().setNodeSelection(hoveredNode.pos).updateAttributes(node.type.name, { marked: !node.attrs.marked }).run();
+                            }
+                        }}
+                    >
+                        <GripVertical size={16} />
+                    </IconButton>
+                )}
             </Box>
             )}
 
