@@ -1,4 +1,4 @@
-import { Box, ButtonGroup, Dialog, DialogContent, Divider, IconButton, Menu, MenuItem, Paper, TextField, Tooltip, Typography, useMediaQuery, useTheme } from '@mui/material';
+import { Box, ButtonGroup, Dialog, DialogContent, Divider, IconButton, Menu, MenuItem, Paper, TextField, Tooltip, Typography, useMediaQuery, useTheme, Fab } from '@mui/material';
 import { Color } from '@tiptap/extension-color';
 import { Highlight } from '@tiptap/extension-highlight';
 import { Link } from '@tiptap/extension-link';
@@ -39,7 +39,9 @@ import {
   Underline as UnderlineIcon,
   Undo,
   X,
-  GripVertical
+  GripVertical,
+  Mic,
+  MicOff
 } from 'lucide-react';
 import { marked } from 'marked';
 import { useEffect, useRef, useState } from 'react';
@@ -56,10 +58,12 @@ interface NoteEditorProps {
     content: string;
     onChange: (content: string) => void;
     editable?: boolean;
+    onFocusChange?: (isFocused: boolean) => void;
 }
 
-const NoteEditor = ({ content, onChange, editable = true }: NoteEditorProps) => {
+const NoteEditor = ({ content, onChange, editable = true, onFocusChange }: NoteEditorProps) => {
     const [previewImage, setPreviewImage] = useState<string | null>(null);
+    const [isEditorFocused, setIsEditorFocused] = useState(false);
     const theme = useTheme();
     const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
     const toolbarRef = useRef<HTMLDivElement>(null);
@@ -129,6 +133,16 @@ const NoteEditor = ({ content, onChange, editable = true }: NoteEditorProps) => 
         content: content,
         onUpdate: ({ editor }) => {
             onChange(editor.getHTML());
+        },
+        onFocus: () => {
+            setIsEditorFocused(true);
+            onFocusChange?.(true);
+        },
+        onBlur: () => {
+            setTimeout(() => {
+                setIsEditorFocused(false);
+                onFocusChange?.(false);
+            }, 200);
         },
         editable: editable,
         editorProps: {
@@ -234,6 +248,79 @@ const NoteEditor = ({ content, onChange, editable = true }: NoteEditorProps) => 
     const [anchorElCallout, setAnchorElCallout] = useState<null | HTMLElement>(null);
     const [anchorElFormat, setAnchorElFormat] = useState<null | HTMLElement>(null);
     const [anchorElList, setAnchorElList] = useState<null | HTMLElement>(null);
+
+    const [isRecording, setIsRecording] = useState(false);
+    const [interimTranscript, setInterimTranscript] = useState('');
+    const recognitionRef = useRef<any>(null);
+
+    const toggleRecording = () => {
+        if (isRecording) {
+            recognitionRef.current?.stop();
+            setIsRecording(false);
+            setInterimTranscript('');
+            return;
+        }
+
+        const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+        if (!SpeechRecognition) {
+            alert('Speech recognition is not supported in this browser. Try Chrome or Safari.');
+            return;
+        }
+
+        if (!recognitionRef.current) {
+            const recognition = new SpeechRecognition();
+            recognition.continuous = true;
+            recognition.interimResults = true;
+            
+            recognition.onstart = () => setIsRecording(true);
+            
+            recognition.onresult = (event: any) => {
+                let finalTranscript = '';
+                let currentInterim = '';
+                
+                for (let i = event.resultIndex; i < event.results.length; ++i) {
+                    if (event.results[i].isFinal) {
+                        finalTranscript += event.results[i][0].transcript + ' ';
+                    } else {
+                        currentInterim += event.results[i][0].transcript;
+                    }
+                }
+                
+                setInterimTranscript(currentInterim);
+                
+                if (finalTranscript && editor) {
+                    setTimeout(() => {
+                        editor.commands.insertContent(finalTranscript);
+                    }, 0);
+                }
+            };
+
+            recognition.onerror = (event: any) => {
+                console.error('Speech recognition error', event.error);
+                if (event.error !== 'no-speech') {
+                    setIsRecording(false);
+                    setInterimTranscript('');
+                }
+            };
+            
+            recognition.onend = () => {
+                setIsRecording(false);
+                setInterimTranscript('');
+            };
+            recognitionRef.current = recognition;
+        }
+        
+        recognitionRef.current.start();
+    };
+
+    // Cleanup on unmount
+    useEffect(() => {
+        return () => {
+            if (recognitionRef.current) {
+                recognitionRef.current.stop();
+            }
+        };
+    }, []);
 
     const handleFormatClick = (event: React.MouseEvent<HTMLButtonElement>) => {
         setAnchorElFormat(event.currentTarget);
@@ -1113,6 +1200,54 @@ const NoteEditor = ({ content, onChange, editable = true }: NoteEditorProps) => 
                 }}
             >
                 <EditorContent editor={editor} />
+                {isRecording && (
+                    <Box sx={{
+                        position: 'absolute',
+                        bottom: { xs: 80, sm: 16 },
+                        left: { xs: 16, sm: 16 },
+                        maxWidth: { xs: 'calc(100% - 90px)', sm: '60%' },
+                        bgcolor: 'background.paper',
+                        border: '1px solid',
+                        borderColor: 'divider',
+                        borderRadius: 2,
+                        px: 2,
+                        py: 1,
+                        boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 1,
+                        zIndex: 10,
+                    }}>
+                        <Mic size={16} color={theme.palette.error.main} style={{ flexShrink: 0 }} />
+                        <Typography 
+                            variant="body2" 
+                            color={interimTranscript ? 'text.primary' : 'text.secondary'}
+                            sx={{ 
+                                fontStyle: interimTranscript ? 'normal' : 'italic',
+                                overflow: 'hidden',
+                                textOverflow: 'ellipsis',
+                                whiteSpace: 'nowrap'
+                            }}
+                        >
+                            {interimTranscript || <span>Listening<span style={{ display: 'inline-block', animation: 'typing 1.5s infinite', width: '20px', textAlign: 'left' }} className="typing-dots" /></span>}
+                        </Typography>
+                        <style>
+                            {`
+                            @keyframes typing {
+                                0% { content: ''; }
+                                25% { content: '.'; }
+                                50% { content: '..'; }
+                                75% { content: '...'; }
+                                100% { content: ''; }
+                            }
+                            .typing-dots::after {
+                                content: '';
+                                animation: typing 1.5s infinite;
+                            }
+                            `}
+                        </style>
+                    </Box>
+                )}
                 {hoveredNode && (
                     <IconButton 
                         size="small"
@@ -1176,6 +1311,41 @@ const NoteEditor = ({ content, onChange, editable = true }: NoteEditorProps) => 
                     )}
                 </DialogContent>
             </Dialog>
+
+            {(isEditorFocused || isRecording) && !isMarkdownMode && editable && (
+                <Tooltip title={isRecording ? "Stop Dictating" : "Voice to Text"} placement="left">
+                    <Fab
+                        color={isRecording ? "error" : "primary"}
+                        onClick={toggleRecording}
+                        size={isMobile ? "small" : "medium"}
+                        sx={{
+                            position: 'fixed',
+                            bottom: { xs: 85, sm: 105 },
+                            // large FAB is 56px width at right: 32px (center: 60px from right)
+                            // medium FAB is 48px width, so right needs to be 36px to center
+                            // mobile large FAB is 48px width at right: 20px (center: 44px from right)
+                            // mobile small FAB is 40px width, so right needs to be 24px to center
+                            right: { xs: 24, sm: 36 },
+                            zIndex: 1100,
+                            boxShadow: '0 8px 16px rgba(0, 0, 0, 0.2)',
+                            ...(isRecording && {
+                                animation: 'pulse 1.5s infinite',
+                                '@keyframes pulse': {
+                                    '0%': { transform: 'scale(1)', boxShadow: '0 0 0 0 rgba(239, 68, 68, 0.7)' },
+                                    '70%': { transform: 'scale(1.05)', boxShadow: '0 0 0 10px rgba(239, 68, 68, 0)' },
+                                    '100%': { transform: 'scale(1)', boxShadow: '0 0 0 0 rgba(239, 68, 68, 0)' }
+                                }
+                            }),
+                            '&:hover': {
+                                transform: isRecording ? 'scale(1.05)' : 'scale(1.1)',
+                                transition: 'transform 0.2s'
+                            }
+                        }}
+                    >
+                        {isRecording ? <MicOff size={isMobile ? 20 : 24} color="white" /> : <Mic size={isMobile ? 20 : 24} color="white" />}
+                    </Fab>
+                </Tooltip>
+            )}
         </Box>
     );
 };
