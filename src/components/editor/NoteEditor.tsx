@@ -77,6 +77,44 @@ const NoteEditor = ({ content, onChange, editable = true, onFocusChange, onOpenA
     const [markdownContent, setMarkdownContent] = useState('');
     const [hoveredNode, setHoveredNode] = useState<{ top: number, pos: number, height: number } | null>(null);
     const [portalTarget, setPortalTarget] = useState<HTMLElement | null>(() => typeof document !== 'undefined' ? document.getElementById('editor-mic-slot') : null);
+    const savedScrollTopRef = useRef<number | null>(null);
+    const scrollParentRef = useRef<HTMLElement | null>(null);
+
+    const getScrollParent = (node: HTMLElement | null): HTMLElement | null => {
+        if (!node) return null;
+        let parent = node.parentElement;
+        while (parent) {
+            const style = window.getComputedStyle(parent);
+            if (style.overflowY === 'auto' || style.overflowY === 'scroll') {
+                return parent;
+            }
+            parent = parent.parentElement;
+        }
+        return null;
+    };
+
+    const handleOpenPreview = (src: string, targetNode?: HTMLElement | null) => {
+        const parent = getScrollParent(targetNode || editor?.view?.dom || null);
+        if (parent) {
+            scrollParentRef.current = parent;
+            savedScrollTopRef.current = parent.scrollTop;
+        }
+        setPreviewImage(src);
+    };
+
+    const handleClosePreview = () => {
+        const parent = scrollParentRef.current;
+        const savedTop = savedScrollTopRef.current;
+        setPreviewImage(null);
+        if (parent && savedTop !== null) {
+            requestAnimationFrame(() => {
+                parent.scrollTop = savedTop;
+            });
+            setTimeout(() => {
+                parent.scrollTop = savedTop;
+            }, 50);
+        }
+    };
 
     useEffect(() => {
         if (!portalTarget) {
@@ -463,11 +501,11 @@ const NoteEditor = ({ content, onChange, editable = true, onFocusChange, onOpenA
     // Listen for custom event from ResizableImageNode
     useEffect(() => {
         const handleOpenModal = (e: any) => {
-            setPreviewImage(e.detail.src);
+            handleOpenPreview(e.detail.src);
         };
         document.addEventListener('open-image-modal', handleOpenModal);
         return () => document.removeEventListener('open-image-modal', handleOpenModal);
-    }, []);
+    }, [editor]);
 
     if (!editor) return null;
 
@@ -1206,7 +1244,7 @@ const NoteEditor = ({ content, onChange, editable = true, onFocusChange, onOpenA
                 onDoubleClick={(e) => {
                     const target = e.target as HTMLElement;
                     if (target.tagName === 'IMG') {
-                        setPreviewImage((target as HTMLImageElement).src);
+                        handleOpenPreview((target as HTMLImageElement).src, target);
                     }
                 }}
             >
@@ -1335,15 +1373,17 @@ const NoteEditor = ({ content, onChange, editable = true, onFocusChange, onOpenA
 
             <Dialog
                 open={Boolean(previewImage)}
-                onClose={() => setPreviewImage(null)}
+                onClose={handleClosePreview}
                 maxWidth="lg"
+                disableRestoreFocus
+                disableScrollLock
                 PaperProps={{
                     sx: { backgroundColor: 'transparent', boxShadow: 'none', overflow: 'hidden' }
                 }}
             >
                 <DialogContent sx={{ p: 0, position: 'relative' }}>
                     <IconButton
-                        onClick={() => setPreviewImage(null)}
+                        onClick={handleClosePreview}
                         sx={{
                             position: 'absolute',
                             top: 8,
