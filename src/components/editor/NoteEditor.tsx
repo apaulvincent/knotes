@@ -41,7 +41,8 @@ import {
   X,
   GripVertical,
   Mic,
-  MicOff
+  MicOff,
+  Sparkles
 } from 'lucide-react';
 import { marked } from 'marked';
 import { useEffect, useRef, useState } from 'react';
@@ -60,9 +61,11 @@ interface NoteEditorProps {
     onChange: (content: string) => void;
     editable?: boolean;
     onFocusChange?: (isFocused: boolean) => void;
+    onOpenAiAgent?: () => void;
+    isAiAgentOpen?: boolean;
 }
 
-const NoteEditor = ({ content, onChange, editable = true, onFocusChange }: NoteEditorProps) => {
+const NoteEditor = ({ content, onChange, editable = true, onFocusChange, onOpenAiAgent, isAiAgentOpen }: NoteEditorProps) => {
     const [previewImage, setPreviewImage] = useState<string | null>(null);
     const [isEditorFocused, setIsEditorFocused] = useState(false);
     const theme = useTheme();
@@ -1207,6 +1210,52 @@ const NoteEditor = ({ content, onChange, editable = true, onFocusChange }: NoteE
                     }
                 }}
             >
+                
+                {/* Floating AI Agent Icon Button inside note area (no text, just icon button) */}
+                {onOpenAiAgent && !isAiAgentOpen && (
+                    <Tooltip title="Ask AI Copilot" placement="left">
+                        <IconButton
+                            onClick={onOpenAiAgent}
+                            aria-label="Open AI Copilot"
+                            sx={{
+                                position: 'absolute',
+                                top: { xs: 10, sm: 14 },
+                                right: { xs: 10, sm: 20 },
+                                zIndex: 20,
+                                width: { xs: 36, sm: 40 },
+                                height: { xs: 36, sm: 40 },
+                                backgroundColor: theme.palette.mode === 'dark' ? '#1e293b' : '#ffffff',
+                                color: 'primary.main',
+                                border: '1px solid',
+                                borderColor: theme.palette.mode === 'dark' ? 'rgba(14, 165, 233, 0.4)' : 'rgba(14, 165, 233, 0.3)',
+                                boxShadow: theme.palette.mode === 'dark'
+                                    ? '0 4px 14px rgba(0, 0, 0, 0.4), 0 0 10px rgba(14, 165, 233, 0.2)'
+                                    : '0 4px 12px rgba(14, 165, 233, 0.15)',
+                                '&:hover': {
+                                    backgroundColor: theme.palette.mode === 'dark' ? 'rgba(14, 165, 233, 0.18)' : 'rgba(14, 165, 233, 0.08)',
+                                    borderColor: 'primary.main',
+                                    transform: 'scale(1.08)',
+                                    boxShadow: '0 6px 18px rgba(14, 165, 233, 0.35)',
+                                },
+                                transition: 'all 0.2s cubic-bezier(0.32, 0.72, 0, 1)',
+                            }}
+                        >
+                            <Sparkles size={isMobile ? 18 : 20} />
+                            <Box
+                                sx={{
+                                    position: 'absolute',
+                                    top: 7,
+                                    right: 7,
+                                    width: 6,
+                                    height: 6,
+                                    borderRadius: '50%',
+                                    bgcolor: '#10b981',
+                                    boxShadow: '0 0 4px #10b981',
+                                }}
+                            />
+                        </IconButton>
+                    </Tooltip>
+                )}
                 <EditorContent editor={editor} />
                 {isRecording && (
                     <Box sx={{

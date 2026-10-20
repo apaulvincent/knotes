@@ -240,3 +240,47 @@ pre code {
   background-color: rgba(14, 165, 233, 0.08);
   font-weight: 600;
 }
+
+
+/* Proposal Preview Box explicit contrast styles */
+.proposal-preview-box h1,
+.proposal-preview-box h2,
+.proposal-preview-box h3,
+.proposal-preview-box h4 {
+  color: inherit !important;
+  font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
+  font-weight: 700;
+  margin-top: 0.75rem;
+  margin-bottom: 0.35rem;
+}
+
+.proposal-preview-box h1:first-child,
+.proposal-preview-box h2:first-child,
+.proposal-preview-box h3:first-child {
+  margin-top: 0;
+}
+
+.proposal-preview-box p {
+  color: inherit !important;
+  margin: 0.35rem 0;
+}
+
+.proposal-preview-box ul,
+.proposal-preview-box ol {
+  color: inherit !important;
+  padding-left: 1.25rem;
+  margin: 0.35rem 0;
+}
+
+.proposal-preview-box li {
+  color: inherit !important;
+  margin-bottom: 0.25rem;
+}
+
+.proposal-preview-box code {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.85em;
+  background-color: rgba(148, 163, 184, 0.2);
+  padding: 1px 4px;
+  border-radius: 4px;
+}
