@@ -71,7 +71,7 @@ export class AiNoteAgentService {
   }
 
   getActiveEngineName(): string {
-    return 'Gemini 2.5 Flash';
+    return 'Gemini 3.8 Flash';
   }
 
   /**
@@ -247,44 +247,69 @@ ${noteMarkdown || '(Empty Note)'}
       });
     }
 
-    const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`;
+    const candidateModels = ['gemini-3.8-flash', 'gemini-2.5-flash'];
+    let responseData: any = null;
+    let activeModelName = 'gemini-3.8-flash';
+    let lastError: any = null;
 
     try {
-      const response = await fetch(endpoint, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          contents,
-          systemInstruction: {
-            parts: [{ text: systemPrompt }],
-          },
-          generationConfig: {
-            responseMimeType: 'application/json',
-            temperature: 0.3,
-            maxOutputTokens: 8192,
-          },
-        }),
-      });
+      for (const model of candidateModels) {
+        const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
 
-      if (response.status === 429) {
-        return {
-          id: 'msg-' + Date.now(),
-          role: 'assistant',
-          content: 'You have reached the API rate limit. Please wait a moment before sending another request.',
-          rateLimited: true,
-          retryAfter: 30,
-          createdAt: new Date(),
-        };
+        try {
+          const response = await fetch(endpoint, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              contents,
+              systemInstruction: {
+                parts: [{ text: systemPrompt }],
+              },
+              generationConfig: {
+                responseMimeType: 'application/json',
+                temperature: 0.3,
+                maxOutputTokens: 8192,
+              },
+            }),
+          });
+
+          if (response.status === 429) {
+            return {
+              id: 'msg-' + Date.now(),
+              role: 'assistant',
+              content: 'You have reached the API rate limit. Please wait a moment before sending another request.',
+              rateLimited: true,
+              retryAfter: 30,
+              createdAt: new Date(),
+            };
+          }
+
+          if (response.status === 404) {
+            // Deprecated on this key/region, fall back to next model
+            continue;
+          }
+
+          if (!response.ok) {
+            const errorText = await response.text();
+            console.error(`Gemini API error on ${model}:`, response.status, errorText);
+            throw new Error(`Gemini API error ${response.status}: ${errorText}`);
+          }
+
+          responseData = await response.json();
+          activeModelName = model;
+          break;
+        } catch (err: any) {
+          lastError = err;
+        }
       }
 
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.error('Gemini API error:', response.status, errorText);
-        throw new Error(`Gemini API error ${response.status}: ${errorText}`);
+      if (!responseData) {
+        throw lastError || new Error('No available Gemini model responded');
       }
 
-      const data = await response.json();
-      const rawText = data?.candidates?.[0]?.content?.parts?.[0]?.text;
+      const parts = responseData?.candidates?.[0]?.content?.parts || [];
+      const textPart = parts.find((p: any) => typeof p.text === 'string' && !p.thought) || parts[0];
+      const rawText = textPart?.text;
 
       if (!rawText) {
         throw new Error('No response text received from Gemini');
@@ -321,7 +346,7 @@ ${noteMarkdown || '(Empty Note)'}
         role: 'assistant',
         content: parsed.reply || parsed.summary || 'I have analyzed and formatted your note.',
         createdAt: new Date(),
-        engine: 'Gemini 2.5 Flash',
+        engine: activeModelName === 'gemini-3.8-flash' ? 'Gemini 3.8 Flash' : 'Gemini Flash',
         proposal,
       };
     } catch (err: any) {
