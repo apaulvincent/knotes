@@ -512,7 +512,36 @@ function App() {
         </Box>
 
         {!isAccountPage && (
-          <Box sx={{ position: 'fixed', bottom: { xs: 20, sm: 32 }, right: { xs: 20, sm: 32 }, display: 'flex', flexDirection: 'column', gap: 2, zIndex: 1100 }}>
+          <Box sx={{
+            position: 'fixed',
+            bottom: { xs: 20, sm: 32 },
+            right: { xs: 20, sm: 32 },
+            display: 'flex',
+            flexDirection: 'column-reverse',
+            gap: 2,
+            alignItems: 'center',
+            zIndex: 1100
+          }}>
+            <Tooltip title="New Note" placement="left">
+              <Fab
+                color="primary"
+                aria-label="add"
+                onClick={handleAddNote}
+                size={isMobile ? "medium" : "large"}
+                sx={{
+                  boxShadow: '0 8px 16px rgba(99, 102, 241, 0.4)',
+                  '&:hover': {
+                    transform: 'scale(1.1)',
+                    transition: 'transform 0.2s'
+                  }
+                }}
+              >
+                <Plus size={isMobile ? 24 : 28} color="white" />
+              </Fab>
+            </Tooltip>
+
+            <Box id="editor-mic-slot" sx={{ display: 'contents' }} />
+
             {showScrollTop && (
               <Tooltip title="Scroll to Top" placement="left">
                 <Fab
@@ -535,23 +564,6 @@ function App() {
                 </Fab>
               </Tooltip>
             )}
-            <Tooltip title="New Note" placement="left">
-              <Fab
-                color="primary"
-                aria-label="add"
-                onClick={handleAddNote}
-                size={isMobile ? "medium" : "large"}
-                sx={{
-                  boxShadow: '0 8px 16px rgba(99, 102, 241, 0.4)',
-                  '&:hover': {
-                    transform: 'scale(1.1)',
-                    transition: 'transform 0.2s'
-                  }
-                }}
-              >
-                <Plus size={isMobile ? 24 : 28} color="white" />
-              </Fab>
-            </Tooltip>
           </Box>
         )}
       </Layout>

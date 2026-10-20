@@ -45,6 +45,7 @@ import {
 } from 'lucide-react';
 import { marked } from 'marked';
 import { useEffect, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import TurndownService from 'turndown';
 import { deleteFile, uploadFile } from '../../services/storage';
 import { Callout } from './extensions/Callout';
@@ -72,6 +73,13 @@ const NoteEditor = ({ content, onChange, editable = true, onFocusChange }: NoteE
     const [isMarkdownMode, setIsMarkdownMode] = useState(false);
     const [markdownContent, setMarkdownContent] = useState('');
     const [hoveredNode, setHoveredNode] = useState<{ top: number, pos: number, height: number } | null>(null);
+    const [portalTarget, setPortalTarget] = useState<HTMLElement | null>(() => typeof document !== 'undefined' ? document.getElementById('editor-mic-slot') : null);
+
+    useEffect(() => {
+        if (!portalTarget) {
+            setPortalTarget(document.getElementById('editor-mic-slot'));
+        }
+    }, [portalTarget]);
 
     useEffect(() => {
         if (isMobile) {
@@ -1313,38 +1321,62 @@ const NoteEditor = ({ content, onChange, editable = true, onFocusChange }: NoteE
             </Dialog>
 
             {(isEditorFocused || isRecording) && !isMarkdownMode && editable && (
-                <Tooltip title={isRecording ? "Stop Dictating" : "Voice to Text"} placement="left">
-                    <Fab
-                        color={isRecording ? "error" : "primary"}
-                        onClick={toggleRecording}
-                        size={isMobile ? "small" : "medium"}
-                        sx={{
-                            position: 'fixed',
-                            bottom: { xs: 85, sm: 105 },
-                            // large FAB is 56px width at right: 32px (center: 60px from right)
-                            // medium FAB is 48px width, so right needs to be 36px to center
-                            // mobile large FAB is 48px width at right: 20px (center: 44px from right)
-                            // mobile small FAB is 40px width, so right needs to be 24px to center
-                            right: { xs: 24, sm: 36 },
-                            zIndex: 1100,
-                            boxShadow: '0 8px 16px rgba(0, 0, 0, 0.2)',
-                            ...(isRecording && {
-                                animation: 'pulse 1.5s infinite',
-                                '@keyframes pulse': {
-                                    '0%': { transform: 'scale(1)', boxShadow: '0 0 0 0 rgba(239, 68, 68, 0.7)' },
-                                    '70%': { transform: 'scale(1.05)', boxShadow: '0 0 0 10px rgba(239, 68, 68, 0)' },
-                                    '100%': { transform: 'scale(1)', boxShadow: '0 0 0 0 rgba(239, 68, 68, 0)' }
+                portalTarget ? createPortal(
+                    <Tooltip title={isRecording ? "Stop Dictating" : "Voice to Text"} placement="left">
+                        <Fab
+                            color={isRecording ? "error" : "primary"}
+                            onClick={toggleRecording}
+                            size={isMobile ? "small" : "medium"}
+                            sx={{
+                                boxShadow: '0 8px 16px rgba(0, 0, 0, 0.2)',
+                                ...(isRecording && {
+                                    animation: 'pulse 1.5s infinite',
+                                    '@keyframes pulse': {
+                                        '0%': { transform: 'scale(1)', boxShadow: '0 0 0 0 rgba(239, 68, 68, 0.7)' },
+                                        '70%': { transform: 'scale(1.05)', boxShadow: '0 0 0 10px rgba(239, 68, 68, 0)' },
+                                        '100%': { transform: 'scale(1)', boxShadow: '0 0 0 0 rgba(239, 68, 68, 0)' }
+                                    }
+                                }),
+                                '&:hover': {
+                                    transform: isRecording ? 'scale(1.05)' : 'scale(1.1)',
+                                    transition: 'transform 0.2s'
                                 }
-                            }),
-                            '&:hover': {
-                                transform: isRecording ? 'scale(1.05)' : 'scale(1.1)',
-                                transition: 'transform 0.2s'
-                            }
-                        }}
-                    >
-                        {isRecording ? <MicOff size={isMobile ? 20 : 24} color="white" /> : <Mic size={isMobile ? 20 : 24} color="white" />}
-                    </Fab>
-                </Tooltip>
+                            }}
+                        >
+                            {isRecording ? <MicOff size={isMobile ? 20 : 24} color="white" /> : <Mic size={isMobile ? 20 : 24} color="white" />}
+                        </Fab>
+                    </Tooltip>,
+                    portalTarget
+                ) : (
+                    <Tooltip title={isRecording ? "Stop Dictating" : "Voice to Text"} placement="left">
+                        <Fab
+                            color={isRecording ? "error" : "primary"}
+                            onClick={toggleRecording}
+                            size={isMobile ? "small" : "medium"}
+                            sx={{
+                                position: 'fixed',
+                                bottom: { xs: 85, sm: 105 },
+                                right: { xs: 24, sm: 36 },
+                                zIndex: 1100,
+                                boxShadow: '0 8px 16px rgba(0, 0, 0, 0.2)',
+                                ...(isRecording && {
+                                    animation: 'pulse 1.5s infinite',
+                                    '@keyframes pulse': {
+                                        '0%': { transform: 'scale(1)', boxShadow: '0 0 0 0 rgba(239, 68, 68, 0.7)' },
+                                        '70%': { transform: 'scale(1.05)', boxShadow: '0 0 0 10px rgba(239, 68, 68, 0)' },
+                                        '100%': { transform: 'scale(1)', boxShadow: '0 0 0 0 rgba(239, 68, 68, 0)' }
+                                    }
+                                }),
+                                '&:hover': {
+                                    transform: isRecording ? 'scale(1.05)' : 'scale(1.1)',
+                                    transition: 'transform 0.2s'
+                                }
+                            }}
+                        >
+                            {isRecording ? <MicOff size={isMobile ? 20 : 24} color="white" /> : <Mic size={isMobile ? 20 : 24} color="white" />}
+                        </Fab>
+                    </Tooltip>
+                )
             )}
         </Box>
     );
