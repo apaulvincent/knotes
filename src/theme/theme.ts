@@ -22,7 +22,7 @@ export const getThemeConfig = (mode: 'light' | 'dark'): ThemeOptions => ({
     },
   },
   typography: {
-    fontFamily: '"Inter", "Outfit", "Roboto", "Helvetica", "Arial", sans-serif',
+    fontFamily: '"Plus Jakarta Sans", "Inter", "Outfit", sans-serif',
     h1: { fontWeight: 700 },
     h2: { fontWeight: 700 },
     h3: { fontWeight: 600 },

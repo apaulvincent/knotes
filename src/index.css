@@ -151,3 +151,92 @@ pre code {
 .hljs-strong {
   font-weight: 700;
 }
+
+
+/* AI Chat Markdown Typography & High-End Design */
+.chat-ai-markdown h1,
+.chat-ai-markdown h2,
+.chat-ai-markdown h3,
+.chat-ai-markdown h4 {
+  font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
+  font-weight: 700;
+  letter-spacing: -0.015em;
+  margin-top: 1rem;
+  margin-bottom: 0.5rem;
+}
+
+.chat-ai-markdown h1:first-child,
+.chat-ai-markdown h2:first-child,
+.chat-ai-markdown h3:first-child {
+  margin-top: 0;
+}
+
+.chat-ai-markdown h1 { font-size: 1.25rem; }
+.chat-ai-markdown h2 { font-size: 1.15rem; }
+.chat-ai-markdown h3 { font-size: 1.05rem; }
+
+.chat-ai-markdown p {
+  margin-top: 0.4rem;
+  margin-bottom: 0.6rem;
+}
+
+.chat-ai-markdown ul,
+.chat-ai-markdown ol {
+  padding-left: 1.25rem;
+  margin-top: 0.35rem;
+  margin-bottom: 0.6rem;
+}
+
+.chat-ai-markdown li {
+  margin-bottom: 0.25rem;
+}
+
+.chat-ai-markdown blockquote {
+  border-left: 3px solid #0ea5e9;
+  padding: 0.25rem 0.75rem;
+  margin: 0.5rem 0;
+  background-color: rgba(14, 165, 233, 0.05);
+  border-radius: 0 0.5rem 0.5rem 0;
+  font-style: italic;
+}
+
+.chat-ai-markdown code {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.85em;
+  padding: 0.15em 0.4em;
+  border-radius: 4px;
+  background-color: rgba(148, 163, 184, 0.15);
+}
+
+.chat-ai-markdown pre {
+  margin: 0.5rem 0;
+  padding: 0.75rem 1rem;
+  border-radius: 0.75rem;
+  background-color: #0b1120;
+  overflow-x: auto;
+}
+
+.chat-ai-markdown pre code {
+  padding: 0;
+  background-color: transparent;
+  color: #f8fafc;
+}
+
+.chat-ai-markdown table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 0.6rem 0;
+  font-size: 0.85rem;
+}
+
+.chat-ai-markdown th,
+.chat-ai-markdown td {
+  border: 1px solid rgba(148, 163, 184, 0.2);
+  padding: 6px 10px;
+  text-align: left;
+}
+
+.chat-ai-markdown th {
+  background-color: rgba(14, 165, 233, 0.08);
+  font-weight: 600;
+}

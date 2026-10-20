@@ -10,7 +10,7 @@ import {
     useMediaQuery,
     useTheme
 } from '@mui/material';
-import { ArrowUp, Loader2, Plus, Save, Trash2 } from 'lucide-react';
+import { ArrowUp, Loader2, Plus, Save, Sparkles, Trash2 } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import AccountPage from './components/account/AccountPage';
@@ -21,6 +21,8 @@ import NoteEditor from './components/editor/NoteEditor';
 import Layout from './components/layout/Layout';
 import CategoryDirectory from './components/notes/CategoryDirectory';
 import NoteCategoryChips from './components/notes/NoteCategoryChips';
+import { NoteAgentFloatingButton } from './components/ai/NoteAgentFloatingButton';
+import { NoteAgentDrawer } from './components/ai/NoteAgentDrawer';
 import { useAuth } from './hooks/useAuth';
 import { useNotes } from './hooks/useNotes';
 import { Note } from './types/note';
@@ -60,6 +62,8 @@ function App() {
     }
   });
   const [activeNote, setActiveNote] = useState<Note | null>(null);
+  const [isAiAgentOpen, setIsAiAgentOpen] = useState(false);
+  const [noteUndoHistory, setNoteUndoHistory] = useState<Array<{ noteId: string; content: string; title: string }>>([]);
   const [isSaving, setIsSaving] = useState(false);
   const [isVerified, setIsVerified] = useState(false);
   const [showScrollTop, setShowScrollTop] = useState(false);
@@ -232,6 +236,33 @@ function App() {
   };
 
 
+  
+  const handleApplyAiContent = useCallback((newContent: string, newTitle?: string | null) => {
+    if (!activeNote) return;
+    setNoteUndoHistory(prev => [...prev, { noteId: activeNote.id, content: activeNote.content, title: activeNote.title }]);
+    setActiveNote(prev => prev ? { ...prev, content: newContent, ...(newTitle ? { title: newTitle } : {}) } : null);
+  }, [activeNote]);
+
+  const handleAppendAiContent = useCallback((appendedContent: string) => {
+    if (!activeNote) return;
+    setNoteUndoHistory(prev => [...prev, { noteId: activeNote.id, content: activeNote.content, title: activeNote.title }]);
+    const separator = activeNote.content && activeNote.content.trim() ? '<br>' : '';
+    const merged = (activeNote.content || '') + separator + appendedContent;
+    setActiveNote(prev => prev ? { ...prev, content: merged } : null);
+  }, [activeNote]);
+
+  const handleUndoAiContent = useCallback(() => {
+    if (!activeNote || noteUndoHistory.length === 0) return;
+    const historyIndex = [...noteUndoHistory].reverse().findIndex(h => h.noteId === activeNote.id);
+    if (historyIndex === -1) return;
+    
+    const actualIndex = noteUndoHistory.length - 1 - historyIndex;
+    const targetHistory = noteUndoHistory[actualIndex];
+    
+    setActiveNote(prev => prev ? { ...prev, content: targetHistory.content, title: targetHistory.title } : null);
+    setNoteUndoHistory(prev => prev.filter((_, idx) => idx !== actualIndex));
+  }, [activeNote, noteUndoHistory]);
+
   const handleDeleteNote = async () => {
     if (activeNote) {
       const idToDelete = activeNote.id;
@@ -368,6 +399,7 @@ function App() {
               <AccountPage user={user} onLogout={handleLogout} onUpdateProfile={handleUpdateProfile} />
             </Box>
           ) : activeNote ? (
+            <>
             <Paper
               elevation={0}
               sx={{
@@ -376,9 +408,15 @@ function App() {
                 flexDirection: 'column',
                 borderRadius: 1,
                 backgroundColor: 'background.paper',
-                overflow: 'hidden'
+                overflow: 'hidden',
+                position: 'relative'
               }}
             >
+              <NoteAgentFloatingButton
+                isOpen={isAiAgentOpen}
+                onClick={() => setIsAiAgentOpen(true)}
+                noteTitle={activeNote.title}
+              />
               <Box
                 sx={{
                   display: 'flex',
@@ -403,6 +441,26 @@ function App() {
                   />
 
                   <Box sx={{ display: 'flex', alignItems: 'center', gap: { xs: 0.5, sm: 1 }, pt: 0.5 }}>
+                    <Tooltip title="Ask AI Copilot to format or edit note">
+                      <IconButton
+                        onClick={() => setIsAiAgentOpen(true)}
+                        size="small"
+                        sx={{
+                          p: { xs: 0.5, sm: 0.75 },
+                          color: '#0ea5e9',
+                          bgcolor: 'rgba(14, 165, 233, 0.08)',
+                          border: '1px solid rgba(14, 165, 233, 0.25)',
+                          borderRadius: '50%',
+                          '&:hover': {
+                            bgcolor: 'rgba(14, 165, 233, 0.18)',
+                            transform: 'scale(1.05)',
+                          },
+                          transition: 'all 0.2s cubic-bezier(0.32, 0.72, 0, 1)',
+                        }}
+                      >
+                        <Sparkles size={17} />
+                      </IconButton>
+                    </Tooltip>
                     <IconButton onClick={handleDeleteNote} color="error" size="small" sx={{ p: { xs: 0.5, sm: 1 } }}>
                       <Trash2 size={18} />
                     </IconButton>
@@ -480,6 +538,17 @@ function App() {
                 />
               </Box>
             </Paper>
+              <NoteAgentDrawer
+                isOpen={isAiAgentOpen}
+                onClose={() => setIsAiAgentOpen(false)}
+                noteTitle={activeNote.title}
+                noteContent={activeNote.content}
+                onApplyContent={handleApplyAiContent}
+                onAppendContent={handleAppendAiContent}
+                canUndo={noteUndoHistory.some(h => h.noteId === activeNote.id)}
+                onUndo={handleUndoAiContent}
+              />
+            </>
           ) : isCategoriesPage ? (
             <Box sx={{ flexGrow: 1, overflowY: 'auto' }}>
               <CategoryDirectory 
