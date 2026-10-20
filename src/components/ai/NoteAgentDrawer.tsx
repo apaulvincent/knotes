@@ -9,8 +9,11 @@ import {
   Bot,
   User,
   Undo2,
-  Key,
-  Check
+  Type,
+  ListTodo,
+  FileText,
+  Minimize2,
+  Table as TableIcon
 } from 'lucide-react';
 import {
   aiNoteAgentService,
@@ -31,13 +34,12 @@ interface NoteAgentDrawerProps {
 }
 
 const QUICK_ACTIONS = [
-  { id: 'FORMAT', label: '✨ Format & Structure', prompt: 'Format and organize this note cleanly with clear headings and bullet points.' },
-  { id: 'POLISH', label: '🪄 Fix Grammar & Flow', prompt: 'Polish grammar, spelling, punctuation, and phrasing across this note.' },
-  { id: 'CHECKLIST', label: '📋 Create Checklist', prompt: 'Extract and convert all actionable tasks into a checklist with checkboxes.' },
-  { id: 'SUMMARIZE', label: '⚡ Executive Summary', prompt: 'Add an executive summary with key takeaways at the top of the note.' },
-  { id: 'CONCISE', label: '✂️ Make Concise', prompt: 'Condense this note. Cut wordiness and repetition without losing any facts.' },
-  { id: 'TABLE', label: '📊 Convert to Table', prompt: 'Organize data or comparative points in this note into a clean Markdown table.' },
-  { id: 'EXPAND', label: '💡 Suggest Next Steps', prompt: 'Suggest concrete next steps, open questions, and milestones for this note.' },
+  { id: 'FORMAT', icon: Sparkles, label: 'Format', prompt: 'Format and organize this note cleanly with clear headings and bullet points.' },
+  { id: 'POLISH', icon: Type, label: 'Polish', prompt: 'Polish grammar, spelling, punctuation, and phrasing across this note.' },
+  { id: 'CHECKLIST', icon: ListTodo, label: 'Checklist', prompt: 'Extract and convert all actionable tasks into a checklist with checkboxes.' },
+  { id: 'SUMMARIZE', icon: FileText, label: 'Summary', prompt: 'Add a concise summary with key takeaways at the top of the note.' },
+  { id: 'CONCISE', icon: Minimize2, label: 'Concise', prompt: 'Condense this note. Cut wordiness and repetition without losing any facts.' },
+  { id: 'TABLE', icon: TableIcon, label: 'Table', prompt: 'Organize data or comparative points in this note into a clean Markdown table.' },
 ] as const;
 
 export const NoteAgentDrawer: React.FC<NoteAgentDrawerProps> = ({
@@ -65,9 +67,6 @@ export const NoteAgentDrawer: React.FC<NoteAgentDrawerProps> = ({
   ]);
   const [inputValue, setInputValue] = useState('');
   const [isTyping, setIsTyping] = useState(false);
-  const [showKeyModal, setShowKeyModal] = useState(false);
-  const [customKeyInput, setCustomKeyInput] = useState('');
-  const [keySaved, setKeySaved] = useState(false);
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
@@ -116,7 +115,7 @@ export const NoteAgentDrawer: React.FC<NoteAgentDrawerProps> = ({
         {
           id: 'err-' + Date.now(),
           role: 'assistant',
-          content: 'Unable to reach the AI model right now. Please check your network or API key.',
+          content: 'Unable to reach the AI model right now. Please check your network connection.',
           createdAt: new Date(),
         },
       ]);
@@ -143,19 +142,6 @@ export const NoteAgentDrawer: React.FC<NoteAgentDrawerProps> = ({
       },
     ]);
   };
-
-  const handleSaveApiKey = () => {
-    aiNoteAgentService.setCustomApiKey(customKeyInput.trim() || null);
-    setKeySaved(true);
-    setTimeout(() => {
-      setKeySaved(false);
-      setShowKeyModal(false);
-    }, 1200);
-  };
-
-  const wordCount = noteContent
-    ? noteContent.replace(/<[^>]*>/g, ' ').trim().split(/\s+/).filter(Boolean).length
-    : 0;
 
   return (
     <aside
@@ -244,15 +230,24 @@ export const NoteAgentDrawer: React.FC<NoteAgentDrawerProps> = ({
 
         {/* Header Action Buttons */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-          <Tooltip title="Configure Gemini API Key">
-            <IconButton
-              size="small"
-              onClick={() => setShowKeyModal(!showKeyModal)}
-              sx={{ color: isDark ? '#94a3b8' : '#64748b' }}
-            >
-              <Key size={16} />
-            </IconButton>
-          </Tooltip>
+          {canUndo && (
+            <Tooltip title="Undo last AI edit">
+              <IconButton
+                size="small"
+                onClick={onUndo}
+                sx={{
+                  color: '#0ea5e9',
+                  bgcolor: isDark ? 'rgba(14, 165, 233, 0.12)' : 'rgba(14, 165, 233, 0.08)',
+                  border: '1px solid rgba(14, 165, 233, 0.25)',
+                  '&:hover': {
+                    bgcolor: isDark ? 'rgba(14, 165, 233, 0.2)' : 'rgba(14, 165, 233, 0.15)',
+                  },
+                }}
+              >
+                <Undo2 size={15} />
+              </IconButton>
+            </Tooltip>
+          )}
 
           <Tooltip title="Reset conversation">
             <IconButton
@@ -275,119 +270,6 @@ export const NoteAgentDrawer: React.FC<NoteAgentDrawerProps> = ({
           </Tooltip>
         </div>
       </header>
-
-      {/* API Key Modal Bar if Toggled */}
-      {showKeyModal && (
-        <div
-          style={{
-            padding: '10px 16px',
-            backgroundColor: isDark ? '#0f172a' : '#f8fafc',
-            borderBottom: isDark ? '1px solid #334155' : '1px solid #e2e8f0',
-            display: 'flex',
-            flexDirection: 'column',
-            gap: '8px',
-          }}
-        >
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-            <span style={{ fontSize: '12px', fontWeight: 600 }}>Gemini API Key</span>
-            <span style={{ fontSize: '10.5px', color: isDark ? '#94a3b8' : '#64748b' }}>Leave blank to use default</span>
-          </div>
-          <div style={{ display: 'flex', gap: '8px' }}>
-            <input
-              type="password"
-              placeholder="Paste Gemini API key..."
-              defaultValue={localStorage.getItem('knotes_gemini_api_key') || ''}
-              onChange={(e) => setCustomKeyInput(e.target.value)}
-              style={{
-                flex: 1,
-                padding: '6px 10px',
-                borderRadius: '6px',
-                border: isDark ? '1px solid #334155' : '1px solid #cbd5e1',
-                backgroundColor: isDark ? '#1e293b' : '#ffffff',
-                color: 'inherit',
-                fontSize: '12px',
-                fontFamily: 'monospace',
-                outline: 'none',
-              }}
-            />
-            <button
-              type="button"
-              onClick={handleSaveApiKey}
-              style={{
-                padding: '6px 12px',
-                borderRadius: '6px',
-                backgroundColor: '#0ea5e9',
-                color: '#fff',
-                border: 'none',
-                fontSize: '12px',
-                fontWeight: 600,
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '4px',
-              }}
-            >
-              {keySaved ? <Check size={14} /> : 'Save'}
-            </button>
-          </div>
-        </div>
-      )}
-
-      {/* Active Note Context Strip */}
-      <div
-        style={{
-          padding: '8px 16px',
-          backgroundColor: isDark ? '#0f172a' : '#f8fafc',
-          borderBottom: isDark ? '1px solid #334155' : '1px solid #e2e8f0',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          fontSize: '11px',
-          flexShrink: 0,
-        }}
-      >
-        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', overflow: 'hidden' }}>
-          <span style={{ color: '#0ea5e9', fontWeight: 600 }}>Editing:</span>
-          <span
-            style={{
-              fontWeight: 600,
-              whiteSpace: 'nowrap',
-              overflow: 'hidden',
-              textOverflow: 'ellipsis',
-              maxWidth: isMobile ? '160px' : '220px',
-              color: isDark ? '#f8fafc' : '#0f172a',
-            }}
-          >
-            {noteTitle || 'Untitled Note'}
-          </span>
-        </div>
-
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <span style={{ color: isDark ? '#94a3b8' : '#64748b' }}>{wordCount} words</span>
-          {canUndo && (
-            <button
-              type="button"
-              onClick={onUndo}
-              title="Undo last AI modification"
-              style={{
-                background: 'none',
-                border: '1px solid rgba(14, 165, 233, 0.4)',
-                color: '#0ea5e9',
-                padding: '2px 8px',
-                borderRadius: '6px',
-                fontSize: '10.5px',
-                fontWeight: 600,
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '4px',
-              }}
-            >
-              <Undo2 size={11} /> Undo Edit
-            </button>
-          )}
-        </div>
-      </div>
 
       {/* Messages Stream */}
       <div
@@ -550,10 +432,10 @@ export const NoteAgentDrawer: React.FC<NoteAgentDrawerProps> = ({
         <div ref={messagesEndRef} />
       </div>
 
-      {/* Quick Action Chips */}
+      {/* Quick Actions 3-Column Micro Grid */}
       <div
         style={{
-          padding: '8px 16px',
+          padding: '10px 16px',
           borderTop: isDark ? '1px solid #334155' : '1px solid #e2e8f0',
           backgroundColor: isDark ? '#1e293b' : '#ffffff',
           flexShrink: 0,
@@ -561,60 +443,58 @@ export const NoteAgentDrawer: React.FC<NoteAgentDrawerProps> = ({
       >
         <div
           style={{
-            fontSize: '10px',
-            fontWeight: 700,
-            textTransform: 'uppercase',
-            letterSpacing: '0.1em',
-            color: isDark ? '#94a3b8' : '#64748b',
-            marginBottom: '6px',
-          }}
-        >
-          Quick Actions:
-        </div>
-        <div
-          style={{
-            display: 'flex',
+            display: 'grid',
+            gridTemplateColumns: 'repeat(3, 1fr)',
             gap: '6px',
-            overflowX: 'auto',
-            paddingBottom: '2px',
-            scrollbarWidth: 'none',
           }}
         >
-          {QUICK_ACTIONS.map((action) => (
-            <button
-              key={action.id}
-              type="button"
-              onClick={() => handleSend(action.prompt, action.id)}
-              disabled={isTyping}
-              style={{
-                whiteSpace: 'nowrap',
-                padding: '5px 10px',
-                borderRadius: '6px',
-                backgroundColor: isDark ? '#0f172a' : '#f8fafc',
-                border: isDark ? '1px solid #334155' : '1px solid #e2e8f0',
-                color: isDark ? '#e2e8f0' : '#1e293b',
-                fontSize: '11.5px',
-                fontWeight: 600,
-                cursor: isTyping ? 'not-allowed' : 'pointer',
-                opacity: isTyping ? 0.5 : 1,
-                transition: 'all 0.15s ease',
-              }}
-              onMouseEnter={(e) => {
-                if (!isTyping) {
-                  e.currentTarget.style.borderColor = '#0ea5e9';
-                  e.currentTarget.style.color = '#0ea5e9';
-                }
-              }}
-              onMouseLeave={(e) => {
-                if (!isTyping) {
-                  e.currentTarget.style.borderColor = isDark ? '#334155' : '#e2e8f0';
-                  e.currentTarget.style.color = isDark ? '#e2e8f0' : '#1e293b';
-                }
-              }}
-            >
-              {action.label}
-            </button>
-          ))}
+          {QUICK_ACTIONS.map((action) => {
+            const Icon = action.icon;
+            return (
+              <button
+                key={action.id}
+                type="button"
+                onClick={() => handleSend(action.prompt, action.id)}
+                disabled={isTyping}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '5px',
+                  padding: '6px 4px',
+                  borderRadius: '6px',
+                  backgroundColor: isDark ? '#0f172a' : '#f8fafc',
+                  border: isDark ? '1px solid #334155' : '1px solid #e2e8f0',
+                  color: isDark ? '#e2e8f0' : '#1e293b',
+                  fontSize: '11.5px',
+                  fontWeight: 600,
+                  cursor: isTyping ? 'not-allowed' : 'pointer',
+                  opacity: isTyping ? 0.5 : 1,
+                  transition: 'all 0.15s ease',
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis',
+                  whiteSpace: 'nowrap',
+                }}
+                onMouseEnter={(e) => {
+                  if (!isTyping) {
+                    e.currentTarget.style.borderColor = '#0ea5e9';
+                    e.currentTarget.style.color = '#38bdf8';
+                    e.currentTarget.style.backgroundColor = isDark ? 'rgba(14, 165, 233, 0.1)' : 'rgba(14, 165, 233, 0.06)';
+                  }
+                }}
+                onMouseLeave={(e) => {
+                  if (!isTyping) {
+                    e.currentTarget.style.borderColor = isDark ? '#334155' : '#e2e8f0';
+                    e.currentTarget.style.color = isDark ? '#e2e8f0' : '#1e293b';
+                    e.currentTarget.style.backgroundColor = isDark ? '#0f172a' : '#f8fafc';
+                  }
+                }}
+              >
+                <Icon size={12} color="#0ea5e9" style={{ flexShrink: 0 }} />
+                <span>{action.label}</span>
+              </button>
+            );
+          })}
         </div>
       </div>
 

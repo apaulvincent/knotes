@@ -71,7 +71,7 @@ export class AiNoteAgentService {
   }
 
   getActiveEngineName(): string {
-    return 'Gemini 3.8 Flash';
+    return 'Gemini 3.5 Flash-Lite';
   }
 
   /**
@@ -247,9 +247,9 @@ ${noteMarkdown || '(Empty Note)'}
       });
     }
 
-    const candidateModels = ['gemini-3.8-flash', 'gemini-2.5-flash'];
+    const candidateModels = ['gemini-3.5-flash-lite', 'gemini-flash-lite-latest', 'gemini-3.8-flash'];
     let responseData: any = null;
-    let activeModelName = 'gemini-3.8-flash';
+    let activeModelName = 'gemini-3.5-flash-lite';
     let lastError: any = null;
 
     try {
@@ -346,7 +346,7 @@ ${noteMarkdown || '(Empty Note)'}
         role: 'assistant',
         content: parsed.reply || parsed.summary || 'I have analyzed and formatted your note.',
         createdAt: new Date(),
-        engine: activeModelName === 'gemini-3.8-flash' ? 'Gemini 3.8 Flash' : 'Gemini Flash',
+        engine: activeModelName.includes('lite') ? 'Gemini 3.5 Flash-Lite' : 'Gemini Flash',
         proposal,
       };
     } catch (err: any) {

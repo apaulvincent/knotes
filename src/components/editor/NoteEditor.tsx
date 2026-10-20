@@ -1238,19 +1238,22 @@ const NoteEditor = ({ content, onChange, editable = true, onFocusChange, onOpenA
                                     boxShadow: '0 6px 18px rgba(14, 165, 233, 0.35)',
                                 },
                                 transition: 'all 0.2s cubic-bezier(0.32, 0.72, 0, 1)',
+                                overflow: 'visible',
                             }}
                         >
                             <Sparkles size={isMobile ? 18 : 20} />
                             <Box
                                 sx={{
                                     position: 'absolute',
-                                    top: 7,
-                                    right: 7,
-                                    width: 6,
-                                    height: 6,
+                                    top: -3,
+                                    left: -3,
+                                    width: 11,
+                                    height: 11,
                                     borderRadius: '50%',
                                     bgcolor: '#10b981',
-                                    boxShadow: '0 0 4px #10b981',
+                                    boxShadow: '0 0 8px #10b981',
+                                    border: '2px solid',
+                                    borderColor: theme.palette.mode === 'dark' ? '#1e293b' : '#ffffff',
                                 }}
                             />
                         </IconButton>
