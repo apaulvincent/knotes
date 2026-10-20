@@ -35,8 +35,20 @@ export const NoteProposalCard: React.FC<NoteProposalCardProps> = ({
   const [isAppended, setIsAppended] = useState(false);
   const [copied, setCopied] = useState(false);
 
+  const cleanMarkdown = React.useMemo(() => {
+    if (!proposal.formattedContent) return '';
+    let text = proposal.formattedContent;
+    if (text.includes('\\n') || text.includes('\\r')) {
+      text = text.replace(/\\r\\n/g, '\n').replace(/\\n/g, '\n').replace(/\\r/g, '\n');
+    }
+    if (text.includes('\\t')) {
+      text = text.replace(/\\t/g, '\t');
+    }
+    return text;
+  }, [proposal.formattedContent]);
+
   const handleCopy = () => {
-    navigator.clipboard.writeText(proposal.formattedContent);
+    navigator.clipboard.writeText(cleanMarkdown);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   };
@@ -225,7 +237,7 @@ export const NoteProposalCard: React.FC<NoteProposalCardProps> = ({
                 color: isDark ? '#f1f5f9' : '#0f172a',
               }}
               dangerouslySetInnerHTML={{
-                __html: marked.parse(proposal.formattedContent) as string,
+                __html: marked.parse(cleanMarkdown) as string,
               }}
             />
           )}

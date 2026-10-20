@@ -75,14 +75,32 @@ export class AiNoteAgentService {
   }
 
   /**
+   * Normalizes markdown text, resolving literal escaped newlines/tabs
+   * that can occur when LLMs serialize strings inside JSON payloads.
+   */
+  normalizeMarkdown(text: string): string {
+    if (!text || typeof text !== 'string') return '';
+    let result = text;
+    if (result.includes('\\n') || result.includes('\\r')) {
+      result = result.replace(/\\r\\n/g, '\n').replace(/\\n/g, '\n').replace(/\\r/g, '\n');
+    }
+    if (result.includes('\\t')) {
+      result = result.replace(/\\t/g, '\t');
+    }
+    result = result.replace(/^```markdown\s*/i, '').replace(/^```\s*/, '').replace(/\s*```$/, '');
+    return result;
+  }
+
+  /**
    * Converts HTML note content to clean markdown for the LLM
    */
   convertHtmlToMarkdown(html: string): string {
     if (!html || html.trim() === '') return '';
     try {
-      return this.turndown.turndown(html);
+      const md = this.turndown.turndown(html);
+      return this.normalizeMarkdown(md);
     } catch {
-      return html.replace(/<[^>]*>/g, '');
+      return this.normalizeMarkdown(html.replace(/<[^>]*>/g, ''));
     }
   }
 
@@ -94,7 +112,8 @@ export class AiNoteAgentService {
     if (!markdown || markdown.trim() === '') return '';
 
     try {
-      let html = marked.parse(markdown) as string;
+      const cleanMarkdown = this.normalizeMarkdown(markdown);
+      let html = marked.parse(cleanMarkdown) as string;
 
       // Transform task list items: <li><input type="checkbox"...> text</li> into Tiptap task items
       html = html.replace(
@@ -159,6 +178,7 @@ CRITICAL EDITORIAL & WRITING GUIDELINES:
    - Use standard Markdown tables (\`| Col 1 | Col 2 |\`) for comparisons or organized data.
    - Use code blocks with language identifiers (\`\`\`ts, \`\`\`json, \`\`\`sql) for technical notes.
    - Use blockquotes (\`> [!NOTE]\` or \`> [!WARNING]\`) for key takeaways or caveats.
+   - FORMATTING INTEGRITY: Always use real paragraph line breaks and spacing. NEVER output raw string escape tokens like "\\n".
 4. ACTION INTENT:
    If the user asks to edit, reformat, summarize, clean up, or change the note:
    - Provide the complete new formatted note in \`formattedContent\` (in Markdown).
@@ -319,32 +339,47 @@ ${noteMarkdown || '(Empty Note)'}
       try {
         parsed = JSON.parse(rawText);
       } catch {
-        // Fallback if not valid JSON
-        parsed = {
-          reply: rawText,
-          summary: 'Generated response',
-          formattedContent: null,
-          action: 'CHAT',
-        };
+        // Fallback: check if wrapped in markdown code fence ```json ... ```
+        const jsonMatch = rawText.match(/```(?:json)?\s*([\s\S]*?)\s*```/);
+        if (jsonMatch) {
+          try {
+            parsed = JSON.parse(jsonMatch[1]);
+          } catch {
+            // ignore
+          }
+        }
+        if (!parsed) {
+          parsed = {
+            reply: rawText,
+            summary: 'Generated response',
+            formattedContent: null,
+            action: 'CHAT',
+          };
+        }
       }
 
       let proposal: ActionProposal | null = null;
       if (parsed.formattedContent && typeof parsed.formattedContent === 'string' && parsed.formattedContent.trim().length > 0) {
-        const formattedHtml = this.convertMarkdownToTiptapHtml(parsed.formattedContent);
+        const cleanedFormatted = this.normalizeMarkdown(parsed.formattedContent);
+        const formattedHtml = this.convertMarkdownToTiptapHtml(cleanedFormatted);
         proposal = {
           action: parsed.action || actionType || 'CUSTOM',
-          summary: parsed.summary || 'Formatted note updates',
+          summary: this.normalizeMarkdown(parsed.summary || 'Formatted note updates'),
           originalContent: noteContent,
-          formattedContent: parsed.formattedContent,
+          formattedContent: cleanedFormatted,
           formattedHtml,
-          updatedTitle: parsed.updatedTitle || null,
+          updatedTitle: parsed.updatedTitle ? this.normalizeMarkdown(parsed.updatedTitle) : null,
         };
       }
+
+      const cleanedReply = this.normalizeMarkdown(
+        parsed.reply || parsed.summary || 'I have analyzed and formatted your note.'
+      );
 
       return {
         id: 'msg-' + Date.now(),
         role: 'assistant',
-        content: parsed.reply || parsed.summary || 'I have analyzed and formatted your note.',
+        content: cleanedReply,
         createdAt: new Date(),
         engine: activeModelName.includes('lite') ? 'Gemini 3.5 Flash-Lite' : 'Gemini Flash',
         proposal,

@@ -14,7 +14,14 @@ export const ChatMessageContent: React.FC<ChatMessageContentProps> = ({ content,
 
   const parsedHtml = useMemo(() => {
     try {
-      return marked.parse(content, { breaks: true, gfm: true }) as string;
+      let normalized = content;
+      if (normalized && (normalized.includes('\\n') || normalized.includes('\\r'))) {
+        normalized = normalized.replace(/\\r\\n/g, '\n').replace(/\\n/g, '\n').replace(/\\r/g, '\n');
+      }
+      if (normalized && normalized.includes('\\t')) {
+        normalized = normalized.replace(/\\t/g, '\t');
+      }
+      return marked.parse(normalized, { breaks: true, gfm: true }) as string;
     } catch {
       return content;
     }
