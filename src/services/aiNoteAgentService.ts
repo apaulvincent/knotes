@@ -32,7 +32,7 @@ export interface SendMessageOptions {
 
 const DEFAULT_API_KEY =
   import.meta.env.VITE_GOOGLE_GENERATIVE_AI_API_KEY ||
-  'AIzaSyAzVEBzOSzBF_iCJ20_zJ8AygLzdZru2mo';
+  '';
 
 export class AiNoteAgentService {
   private customApiKey: string | null = null;
@@ -161,6 +161,14 @@ export class AiNoteAgentService {
   async sendMessage(options: SendMessageOptions): Promise<NoteAgentMessage> {
     const { messages, noteTitle, noteContent, actionType, customPrompt } = options;
     const apiKey = this.getApiKey();
+    if (!apiKey) {
+      return {
+        id: 'msg-' + Date.now(),
+        role: 'assistant',
+        content: 'No Gemini API key found. Please configure VITE_GOOGLE_GENERATIVE_AI_API_KEY in your environment.',
+        createdAt: new Date(),
+      };
+    }
 
     const noteMarkdown = this.convertHtmlToMarkdown(noteContent);
 
