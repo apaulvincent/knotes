@@ -1009,7 +1009,121 @@ const NoteEditor = ({ content, onChange, editable = true, onFocusChange, onOpenA
                             <AlertCircle size={18} style={{ marginRight: 8, color: '#ef4444' }} /> Error Callout
                         </MenuItem>
                     </Menu>
+
+                    {/* Floating AI Agent Icon Button - stuck to top right of note area */}
+                    {onOpenAiAgent && !isAiAgentOpen && (
+                        <Box
+                            sx={{
+                                position: 'absolute',
+                                top: 'calc(100% + 14px)',
+                                right: { xs: 10, sm: 20 },
+                                zIndex: 90,
+                                pointerEvents: 'none',
+                            }}
+                        >
+                            <Tooltip title="Ask AI Copilot" placement="left">
+                                <IconButton
+                                    onClick={onOpenAiAgent}
+                                    aria-label="Open AI Copilot"
+                                    sx={{
+                                        pointerEvents: 'auto',
+                                        width: { xs: 36, sm: 40 },
+                                        height: { xs: 36, sm: 40 },
+                                        backgroundColor: theme.palette.mode === 'dark' ? '#1e293b' : '#ffffff',
+                                        color: 'primary.main',
+                                        border: '1px solid',
+                                        borderColor: theme.palette.mode === 'dark' ? 'rgba(14, 165, 233, 0.4)' : 'rgba(14, 165, 233, 0.3)',
+                                        boxShadow: theme.palette.mode === 'dark'
+                                            ? '0 4px 14px rgba(0, 0, 0, 0.4), 0 0 10px rgba(14, 165, 233, 0.2)'
+                                            : '0 4px 12px rgba(14, 165, 233, 0.15)',
+                                        '&:hover': {
+                                            backgroundColor: theme.palette.mode === 'dark' ? 'rgba(14, 165, 233, 0.18)' : 'rgba(14, 165, 233, 0.08)',
+                                            borderColor: 'primary.main',
+                                            transform: 'scale(1.08)',
+                                            boxShadow: '0 6px 18px rgba(14, 165, 233, 0.35)',
+                                        },
+                                        transition: 'all 0.2s cubic-bezier(0.32, 0.72, 0, 1)',
+                                        overflow: 'visible',
+                                    }}
+                                >
+                                    <Sparkles size={isMobile ? 18 : 20} />
+                                    <Box
+                                        sx={{
+                                            position: 'absolute',
+                                            top: -3,
+                                            left: -3,
+                                            width: 11,
+                                            height: 11,
+                                            borderRadius: '50%',
+                                            bgcolor: '#10b981',
+                                            boxShadow: '0 0 8px #10b981',
+                                            border: '2px solid',
+                                            borderColor: theme.palette.mode === 'dark' ? '#1e293b' : '#ffffff',
+                                        }}
+                                    />
+                                </IconButton>
+                            </Tooltip>
+                        </Box>
+                    )}
                 </Paper>
+            )}
+
+            {!editable && onOpenAiAgent && !isAiAgentOpen && (
+                <Box
+                    sx={{
+                        position: 'sticky',
+                        top: 14,
+                        display: 'flex',
+                        justifyContent: 'flex-end',
+                        pr: { xs: 1.25, sm: 2.5 },
+                        zIndex: 90,
+                        height: 0,
+                        pointerEvents: 'none',
+                    }}
+                >
+                    <Tooltip title="Ask AI Copilot" placement="left">
+                        <IconButton
+                            onClick={onOpenAiAgent}
+                            aria-label="Open AI Copilot"
+                            sx={{
+                                pointerEvents: 'auto',
+                                width: { xs: 36, sm: 40 },
+                                height: { xs: 36, sm: 40 },
+                                backgroundColor: theme.palette.mode === 'dark' ? '#1e293b' : '#ffffff',
+                                color: 'primary.main',
+                                border: '1px solid',
+                                borderColor: theme.palette.mode === 'dark' ? 'rgba(14, 165, 233, 0.4)' : 'rgba(14, 165, 233, 0.3)',
+                                boxShadow: theme.palette.mode === 'dark'
+                                    ? '0 4px 14px rgba(0, 0, 0, 0.4), 0 0 10px rgba(14, 165, 233, 0.2)'
+                                    : '0 4px 12px rgba(14, 165, 233, 0.15)',
+                                '&:hover': {
+                                    backgroundColor: theme.palette.mode === 'dark' ? 'rgba(14, 165, 233, 0.18)' : 'rgba(14, 165, 233, 0.08)',
+                                    borderColor: 'primary.main',
+                                    transform: 'scale(1.08)',
+                                    boxShadow: '0 6px 18px rgba(14, 165, 233, 0.35)',
+                                },
+                                transition: 'all 0.2s cubic-bezier(0.32, 0.72, 0, 1)',
+                                overflow: 'visible',
+                            }}
+                        >
+                            <Sparkles size={isMobile ? 18 : 20} />
+                            <Box
+                                sx={{
+                                    position: 'absolute',
+                                    top: -3,
+                                    left: -3,
+                                    width: 11,
+                                    height: 11,
+                                    borderRadius: '50%',
+                                    bgcolor: '#10b981',
+                                    boxShadow: '0 0 8px #10b981',
+                                    border: '2px solid',
+                                    borderColor: theme.palette.mode === 'dark' ? '#1e293b' : '#ffffff',
+                                }}
+                            />
+                        </IconButton>
+                    </Tooltip>
+                </Box>
             )}
 
             {isMarkdownMode ? (
@@ -1248,55 +1362,6 @@ const NoteEditor = ({ content, onChange, editable = true, onFocusChange, onOpenA
                     }
                 }}
             >
-                
-                {/* Floating AI Agent Icon Button inside note area (no text, just icon button) */}
-                {onOpenAiAgent && !isAiAgentOpen && (
-                    <Tooltip title="Ask AI Copilot" placement="left">
-                        <IconButton
-                            onClick={onOpenAiAgent}
-                            aria-label="Open AI Copilot"
-                            sx={{
-                                position: 'absolute',
-                                top: { xs: 10, sm: 14 },
-                                right: { xs: 10, sm: 20 },
-                                zIndex: 20,
-                                width: { xs: 36, sm: 40 },
-                                height: { xs: 36, sm: 40 },
-                                backgroundColor: theme.palette.mode === 'dark' ? '#1e293b' : '#ffffff',
-                                color: 'primary.main',
-                                border: '1px solid',
-                                borderColor: theme.palette.mode === 'dark' ? 'rgba(14, 165, 233, 0.4)' : 'rgba(14, 165, 233, 0.3)',
-                                boxShadow: theme.palette.mode === 'dark'
-                                    ? '0 4px 14px rgba(0, 0, 0, 0.4), 0 0 10px rgba(14, 165, 233, 0.2)'
-                                    : '0 4px 12px rgba(14, 165, 233, 0.15)',
-                                '&:hover': {
-                                    backgroundColor: theme.palette.mode === 'dark' ? 'rgba(14, 165, 233, 0.18)' : 'rgba(14, 165, 233, 0.08)',
-                                    borderColor: 'primary.main',
-                                    transform: 'scale(1.08)',
-                                    boxShadow: '0 6px 18px rgba(14, 165, 233, 0.35)',
-                                },
-                                transition: 'all 0.2s cubic-bezier(0.32, 0.72, 0, 1)',
-                                overflow: 'visible',
-                            }}
-                        >
-                            <Sparkles size={isMobile ? 18 : 20} />
-                            <Box
-                                sx={{
-                                    position: 'absolute',
-                                    top: -3,
-                                    left: -3,
-                                    width: 11,
-                                    height: 11,
-                                    borderRadius: '50%',
-                                    bgcolor: '#10b981',
-                                    boxShadow: '0 0 8px #10b981',
-                                    border: '2px solid',
-                                    borderColor: theme.palette.mode === 'dark' ? '#1e293b' : '#ffffff',
-                                }}
-                            />
-                        </IconButton>
-                    </Tooltip>
-                )}
                 <EditorContent editor={editor} />
                 {isRecording && (
                     <Box sx={{
