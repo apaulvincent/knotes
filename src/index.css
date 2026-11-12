@@ -284,3 +284,39 @@ pre code {
   padding: 1px 4px;
   border-radius: 4px;
 }
+
+/* KaTeX Math Rendering Safeguards */
+.katex,
+.katex * {
+  word-break: normal;
+  overflow-wrap: normal;
+}
+
+.katex img {
+  max-width: none;
+  height: auto;
+}
+
+.katex-math-inline {
+  display: inline-block;
+  vertical-align: baseline;
+}
+
+.katex-math-inline:hover {
+  background-color: rgba(14, 165, 233, 0.08);
+}
+
+.katex-math-block {
+  display: block;
+  margin: 0.75rem 0;
+  overflow-x: auto;
+  overflow-y: hidden;
+  max-width: 100%;
+}
+
+.katex-display {
+  overflow-x: auto;
+  overflow-y: hidden;
+  max-width: 100%;
+  margin: 0.75rem 0;
+}

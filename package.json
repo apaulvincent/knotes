@@ -40,6 +40,7 @@
     "firebase": "^12.9.0",
     "framer-motion": "^12.38.0",
     "highlight.js": "^11.11.1",
+    "katex": "^0.19.1",
     "lowlight": "^3.3.0",
     "lucide-react": "^0.575.0",
     "marked": "^17.0.4",
@@ -54,6 +55,7 @@
   },
   "devDependencies": {
     "@eslint/js": "^9.19.0",
+    "@types/katex": "^0.16.8",
     "@types/marked": "^5.0.2",
     "@types/react": "^19.0.8",
     "@types/react-dom": "^19.0.3",

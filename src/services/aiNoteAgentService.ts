@@ -1,6 +1,9 @@
 // src/services/aiNoteAgentService.ts
-import { marked } from 'marked';
-import TurndownService from 'turndown';
+import {
+  convertHtmlToMarkdownWithMath,
+  normalizeMarkdownSafe,
+  parseMarkdownWithMath,
+} from '../utils/math';
 
 export interface ActionProposal {
   action: 'FORMAT' | 'POLISH' | 'CHECKLIST' | 'SUMMARIZE' | 'CONCISE' | 'TABLE' | 'EXPAND' | 'CUSTOM' | 'CHAT';
@@ -36,11 +39,6 @@ const DEFAULT_API_KEY =
 
 export class AiNoteAgentService {
   private customApiKey: string | null = null;
-  private turndown = new TurndownService({
-    headingStyle: 'atx',
-    codeBlockStyle: 'fenced',
-    bulletListMarker: '-',
-  });
 
   constructor() {
     if (typeof window !== 'undefined') {
@@ -79,16 +77,7 @@ export class AiNoteAgentService {
    * that can occur when LLMs serialize strings inside JSON payloads.
    */
   normalizeMarkdown(text: string): string {
-    if (!text || typeof text !== 'string') return '';
-    let result = text;
-    if (result.includes('\\n') || result.includes('\\r')) {
-      result = result.replace(/\\r\\n/g, '\n').replace(/\\n/g, '\n').replace(/\\r/g, '\n');
-    }
-    if (result.includes('\\t')) {
-      result = result.replace(/\\t/g, '\t');
-    }
-    result = result.replace(/^```markdown\s*/i, '').replace(/^```\s*/, '').replace(/\s*```$/, '');
-    return result;
+    return normalizeMarkdownSafe(text);
   }
 
   /**
@@ -97,7 +86,7 @@ export class AiNoteAgentService {
   convertHtmlToMarkdown(html: string): string {
     if (!html || html.trim() === '') return '';
     try {
-      const md = this.turndown.turndown(html);
+      const md = convertHtmlToMarkdownWithMath(html);
       return this.normalizeMarkdown(md);
     } catch {
       return this.normalizeMarkdown(html.replace(/<[^>]*>/g, ''));
@@ -106,14 +95,14 @@ export class AiNoteAgentService {
 
   /**
    * Converts markdown to Tiptap-friendly HTML with support for
-   * task lists, tables, code blocks, and callouts
+   * task lists, tables, code blocks, callouts, and LaTeX math
    */
   convertMarkdownToTiptapHtml(markdown: string): string {
     if (!markdown || markdown.trim() === '') return '';
 
     try {
       const cleanMarkdown = this.normalizeMarkdown(markdown);
-      let html = marked.parse(cleanMarkdown) as string;
+      let html = parseMarkdownWithMath(cleanMarkdown, { mode: 'tiptap' });
 
       // Transform task list items: <li><input type="checkbox"...> text</li> into Tiptap task items
       html = html.replace(
@@ -186,6 +175,7 @@ CRITICAL EDITORIAL & WRITING GUIDELINES:
    - Use standard Markdown tables (\`| Col 1 | Col 2 |\`) for comparisons or organized data.
    - Use code blocks with language identifiers (\`\`\`ts, \`\`\`json, \`\`\`sql) for technical notes.
    - Use blockquotes (\`> [!NOTE]\` or \`> [!WARNING]\`) for key takeaways or caveats.
+   - Use LaTeX math delimiters (\`$...$\` inline or \`$$...$$\` display) for mathematical expressions or scientific units.
    - FORMATTING INTEGRITY: Always use real paragraph line breaks and spacing. NEVER output raw string escape tokens like "\\n".
 4. ACTION INTENT:
    If the user asks to edit, reformat, summarize, clean up, or change the note:

@@ -7,6 +7,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useSettings } from '../../contexts/SettingsContext';
 import { Category, Note } from '../../types/note';
+import { getPlainPreviewText } from '../../utils/math';
 import Logo from '../common/Logo';
 import Masonry from '@mui/lab/Masonry';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -417,7 +418,7 @@ const Sidebar = ({
                                             wordBreak: 'break-all'
                                         }}
                                     >
-                                        {note.content.replace(/<[^>]*>/g, '').substring(0, 250) || 'No additional content'}
+                                        {getPlainPreviewText(note.content) || 'No additional content'}
                                     </Typography>
                                 )}
                                 <Box sx={{ 

@@ -44,13 +44,17 @@ import {
   MicOff,
   Sparkles
 } from 'lucide-react';
-import { marked } from 'marked';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
-import TurndownService from 'turndown';
 import { deleteFile, uploadFile } from '../../services/storage';
+import {
+  convertHtmlToMarkdownWithMath,
+  parseMarkdownWithMath,
+  preprocessHtmlMath,
+} from '../../utils/math';
 import { Callout } from './extensions/Callout';
 import { CodeBlockEnhanced } from './extensions/CodeBlockEnhanced';
+import { MathBlock, MathInline, transformPastedMathSlice } from './extensions/MathExtension';
 import { ResizableImage } from './extensions/ResizableImage';
 import { BlockMarker } from './extensions/BlockMarker';
 
@@ -75,6 +79,8 @@ const NoteEditor = ({ content, onChange, editable = true, onFocusChange, onOpenA
     const [showSecondLayer, setShowSecondLayer] = useState(false);
     const [isMarkdownMode, setIsMarkdownMode] = useState(false);
     const [markdownContent, setMarkdownContent] = useState('');
+    const lastMarkdownHtmlRef = useRef<string | null>(null);
+    const normalizedContent = useMemo(() => preprocessHtmlMath(content), [content]);
     const [hoveredNode, setHoveredNode] = useState<{ top: number, pos: number, height: number } | null>(null);
     const [portalTarget, setPortalTarget] = useState<HTMLElement | null>(() => typeof document !== 'undefined' ? document.getElementById('editor-mic-slot') : null);
     const savedScrollTopRef = useRef<number | null>(null);
@@ -178,8 +184,10 @@ const NoteEditor = ({ content, onChange, editable = true, onFocusChange, onOpenA
             }),
             Callout,
             BlockMarker,
+            MathInline,
+            MathBlock,
         ],
-        content: content,
+        content: normalizedContent,
         onUpdate: ({ editor }) => {
             onChange(editor.getHTML());
         },
@@ -195,6 +203,8 @@ const NoteEditor = ({ content, onChange, editable = true, onFocusChange, onOpenA
         },
         editable: editable,
         editorProps: {
+            transformPastedHTML: (html) => preprocessHtmlMath(html),
+            transformPasted: (slice, view, plain) => transformPastedMathSlice(slice, view, plain),
             handlePaste: (_view, event) => {
                 const items = Array.from(event.clipboardData?.items || []);
                 const imageItem = items.find(item => item.type.startsWith('image/'));
@@ -433,17 +443,14 @@ const NoteEditor = ({ content, onChange, editable = true, onFocusChange, onOpenA
 
         if (isMarkdownMode) {
             // Switching from Markdown to Formatted
-            const htmlContent = marked.parse(markdownContent) as string;
+            const htmlContent = parseMarkdownWithMath(markdownContent, { mode: 'tiptap' });
             editor.commands.setContent(htmlContent);
+            lastMarkdownHtmlRef.current = null;
             setIsMarkdownMode(false);
         } else {
             // Switching from Formatted to Markdown
-            const turndownService = new TurndownService({
-                headingStyle: 'atx',
-                codeBlockStyle: 'fenced',
-                bulletListMarker: '-',
-            });
-            const markdown = turndownService.turndown(editor.getHTML());
+            const markdown = convertHtmlToMarkdownWithMath(editor.getHTML());
+            lastMarkdownHtmlRef.current = content;
             setMarkdownContent(markdown);
             setIsMarkdownMode(true);
         }
@@ -485,18 +492,14 @@ const NoteEditor = ({ content, onChange, editable = true, onFocusChange, onOpenA
     }, [content, editor]);
 
     useEffect(() => {
-        if (editor && content !== editor.getHTML() && !isMarkdownMode) {
-            editor.commands.setContent(content);
+        if (editor && !isMarkdownMode && normalizedContent !== editor.getHTML()) {
+            editor.commands.setContent(normalizedContent);
         }
-        if (isMarkdownMode) {
-            const turndownService = new TurndownService({
-                headingStyle: 'atx',
-                codeBlockStyle: 'fenced',
-                bulletListMarker: '-',
-            });
-            setMarkdownContent(turndownService.turndown(content));
+        if (isMarkdownMode && content !== lastMarkdownHtmlRef.current) {
+            lastMarkdownHtmlRef.current = content;
+            setMarkdownContent(convertHtmlToMarkdownWithMath(content));
         }
-    }, [content, editor, isMarkdownMode]);
+    }, [content, normalizedContent, editor, isMarkdownMode]);
 
     // Listen for custom event from ResizableImageNode
     useEffect(() => {
@@ -1136,8 +1139,10 @@ const NoteEditor = ({ content, onChange, editable = true, onFocusChange, onOpenA
                         value={markdownContent}
                         onChange={(e) => {
                             const newMarkdown = e.target.value;
+                            const html = parseMarkdownWithMath(newMarkdown, { mode: 'tiptap' });
+                            lastMarkdownHtmlRef.current = html;
                             setMarkdownContent(newMarkdown);
-                            onChange(marked.parse(newMarkdown) as string);
+                            onChange(html);
                         }}
                         placeholder="Type your markdown here..."
                         sx={{

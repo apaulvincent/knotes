@@ -14,7 +14,7 @@ import {
   ListTodo,
   Table as TableIcon
 } from 'lucide-react';
-import { marked } from 'marked';
+import { normalizeMarkdownSafe, parseMarkdownWithMath } from '../../utils/math';
 
 interface NoteProposalCardProps {
   proposal: ActionProposal;
@@ -36,15 +36,7 @@ export const NoteProposalCard: React.FC<NoteProposalCardProps> = ({
   const [copied, setCopied] = useState(false);
 
   const cleanMarkdown = React.useMemo(() => {
-    if (!proposal.formattedContent) return '';
-    let text = proposal.formattedContent;
-    if (text.includes('\\n') || text.includes('\\r')) {
-      text = text.replace(/\\r\\n/g, '\n').replace(/\\n/g, '\n').replace(/\\r/g, '\n');
-    }
-    if (text.includes('\\t')) {
-      text = text.replace(/\\t/g, '\t');
-    }
-    return text;
+    return normalizeMarkdownSafe(proposal.formattedContent || '');
   }, [proposal.formattedContent]);
 
   const handleCopy = () => {
@@ -237,7 +229,7 @@ export const NoteProposalCard: React.FC<NoteProposalCardProps> = ({
                 color: isDark ? '#f1f5f9' : '#0f172a',
               }}
               dangerouslySetInnerHTML={{
-                __html: marked.parse(cleanMarkdown) as string,
+                __html: parseMarkdownWithMath(cleanMarkdown, { mode: 'katex' }),
               }}
             />
           )}

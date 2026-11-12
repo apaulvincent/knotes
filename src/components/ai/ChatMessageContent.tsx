@@ -1,6 +1,6 @@
 // src/components/ai/ChatMessageContent.tsx
 import React, { useMemo } from 'react';
-import { marked } from 'marked';
+import { normalizeMarkdownSafe, parseMarkdownWithMath } from '../../utils/math';
 
 interface ChatMessageContentProps {
   content: string;
@@ -8,24 +8,19 @@ interface ChatMessageContentProps {
 }
 
 export const ChatMessageContent: React.FC<ChatMessageContentProps> = ({ content, isUser }) => {
-  if (isUser) {
-    return <div style={{ whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>{content}</div>;
-  }
-
   const parsedHtml = useMemo(() => {
+    if (isUser) return '';
     try {
-      let normalized = content;
-      if (normalized && (normalized.includes('\\n') || normalized.includes('\\r'))) {
-        normalized = normalized.replace(/\\r\\n/g, '\n').replace(/\\n/g, '\n').replace(/\\r/g, '\n');
-      }
-      if (normalized && normalized.includes('\\t')) {
-        normalized = normalized.replace(/\\t/g, '\t');
-      }
-      return marked.parse(normalized, { breaks: true, gfm: true }) as string;
+      const normalized = normalizeMarkdownSafe(content);
+      return parseMarkdownWithMath(normalized, { mode: 'katex', breaks: true });
     } catch {
       return content;
     }
-  }, [content]);
+  }, [content, isUser]);
+
+  if (isUser) {
+    return <div style={{ whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>{content}</div>;
+  }
 
   return (
     <div
