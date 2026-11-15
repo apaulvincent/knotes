@@ -10,8 +10,8 @@ import {
     useMediaQuery,
     useTheme
 } from '@mui/material';
-import { ArrowUp, Loader2, Plus, Save, Trash2 } from 'lucide-react';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { ArrowUp, Check, Copy, Loader2, Plus, Save, Trash2 } from 'lucide-react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import AccountPage from './components/account/AccountPage';
 import EmailVerification from './components/auth/EmailVerification';
@@ -25,6 +25,7 @@ import { NoteAgentDrawer } from './components/ai/NoteAgentDrawer';
 import { useAuth } from './hooks/useAuth';
 import { useNotes } from './hooks/useNotes';
 import { Note } from './types/note';
+import { convertHtmlToMarkdownWithMath } from './utils/math';
 
 function App() {
   const {
@@ -64,9 +65,57 @@ function App() {
   const [isAiAgentOpen, setIsAiAgentOpen] = useState(false);
   const [noteUndoHistory, setNoteUndoHistory] = useState<Array<{ noteId: string; content: string; title: string }>>([]);
   const [isSaving, setIsSaving] = useState(false);
+  const [isCopied, setIsCopied] = useState(false);
   const [isVerified, setIsVerified] = useState(false);
   const [showScrollTop, setShowScrollTop] = useState(false);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
+
+  const noteStats = useMemo(() => {
+    if (!activeNote?.content) {
+      return { words: 0, characters: 0, readingTime: 1 };
+    }
+    const plainText = activeNote.content
+      .replace(/<[^>]*>/g, ' ')
+      .replace(/&nbsp;/gi, ' ')
+      .replace(/\s+/g, ' ')
+      .trim();
+
+    if (!plainText) {
+      return { words: 0, characters: 0, readingTime: 1 };
+    }
+
+    const words = plainText.split(/\s+/).filter(Boolean).length;
+    const characters = plainText.length;
+    const readingTime = Math.max(1, Math.ceil(words / 200));
+
+    return { words, characters, readingTime };
+  }, [activeNote?.content]);
+
+  const handleCopyNote = useCallback(async () => {
+    if (!activeNote) return;
+    try {
+      const markdown = convertHtmlToMarkdownWithMath(activeNote.content || '');
+      const fullText = activeNote.title?.trim()
+        ? `# ${activeNote.title.trim()}\n\n${markdown}`
+        : markdown;
+
+      if (navigator.clipboard?.writeText) {
+        await navigator.clipboard.writeText(fullText);
+      } else {
+        const textarea = document.createElement('textarea');
+        textarea.value = fullText;
+        document.body.appendChild(textarea);
+        textarea.select();
+        document.execCommand('copy');
+        document.body.removeChild(textarea);
+      }
+
+      setIsCopied(true);
+      setTimeout(() => setIsCopied(false), 2000);
+    } catch (err) {
+      console.error('Failed to copy note:', err);
+    }
+  }, [activeNote]);
 
   const handleScroll = (e: React.UIEvent<HTMLDivElement>) => {
     setShowScrollTop(e.currentTarget.scrollTop > 300);
@@ -435,6 +484,19 @@ function App() {
                   />
 
                   <Box sx={{ display: 'flex', alignItems: 'center', gap: { xs: 0.5, sm: 1 }, pt: 0.5 }}>
+                    <Tooltip title={isCopied ? "Copied markdown!" : "Copy Note as Markdown"}>
+                      <IconButton
+                        onClick={handleCopyNote}
+                        size="small"
+                        sx={{
+                          p: { xs: 0.5, sm: 1 },
+                          color: isCopied ? 'success.main' : 'text.secondary',
+                          '&:hover': { color: isCopied ? 'success.main' : 'primary.main' }
+                        }}
+                      >
+                        {isCopied ? <Check size={18} /> : <Copy size={18} />}
+                      </IconButton>
+                    </Tooltip>
                     <IconButton onClick={handleDeleteNote} color="error" size="small" sx={{ p: { xs: 0.5, sm: 1 } }}>
                       <Trash2 size={18} />
                     </IconButton>
@@ -498,6 +560,34 @@ function App() {
                     }
                   }}
                 />
+
+                <Box
+                  sx={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    flexWrap: 'wrap',
+                    gap: 0.75,
+                    userSelect: 'none',
+                    opacity: 0.85
+                  }}
+                >
+                  <Typography
+                    variant="caption"
+                    sx={{
+                      color: 'text.secondary',
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: 0.75,
+                      fontSize: '0.75rem'
+                    }}
+                  >
+                    <span>{noteStats.words} {noteStats.words === 1 ? 'word' : 'words'}</span>
+                    <span>•</span>
+                    <span>{noteStats.characters.toLocaleString()} characters</span>
+                    <span>•</span>
+                    <span>{noteStats.readingTime} min read</span>
+                  </Typography>
+                </Box>
               </Box>
 
               <Box 
